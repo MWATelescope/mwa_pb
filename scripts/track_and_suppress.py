@@ -13,15 +13,15 @@ This is the script interface to the functions and modules defined in MandC_Core/
 
 import getpass
 import logging
-import sys
 from optparse import OptionParser
+import sys
 
 import astropy
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 
-import config
-from suppress import get_best_gridpoints_supress_sun, get_best_gridpoints
+from mwa_pb import config
+from mwa_pb.suppress import get_best_gridpoints_supress_sun, get_best_gridpoints
 
 # configure the logging
 logging.basicConfig(filename='/tmp/suppress.log', format='# %(levelname)s:%(name)s: %(message)s')

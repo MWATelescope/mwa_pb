@@ -40,7 +40,11 @@ import math
 from scipy import misc
 from scipy.special import lpmv     # associated Legendre function
 
+from astropy.io import fits
+from scipy.interpolate import RegularGridInterpolator
+
 import config
+import beam_tools
 
 logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger(__name__)  # default logger level is WARNING
@@ -392,7 +396,6 @@ class Beam(object):
 
     # RegularGridInterpolator only needed for this function.
     # FIXME: version check, as it's not available on earlier scipy versions
-    from scipy.interpolate import RegularGridInterpolator
 
     # TODO: find min & max of phi_arr & theta_arr so that a subset of the
     # grid can be calculated (instead of the whole 0-360, 0-90 grid)
@@ -790,8 +793,6 @@ if __name__ == "__main__":
   filebase = '%s-%sPixPerDeg-%s' % (point_dirn, pixels_per_deg, True)
   title = 'Az_NtE=%s, ZA=%s\n' % (my_Astro_Az, my_ZA)
 
-  import beam_tools
-
   # Get cut at pointing direction
   idx = az == (float(my_Astro_Az) * deg2rad)
   cut_1D = Jones[:, :, idx]
@@ -817,7 +818,6 @@ if __name__ == "__main__":
   writetofits = False
   if writetofits:
     vis = beam_tools.makeUnpolInstrumentalResponse(Jones, Jones)
-    from astropy.io import fits
 
     filename = 'beam_%sMHz_%s_E-W.fits' % (target_freq_Hz / 1e6, proj)
     fits.writeto(filename, np.abs(vis[0, 0]))

@@ -5,7 +5,7 @@ import numpy
 
 from matplotlib import pyplot
 
-import mwapb
+from mwa_pb import mwapb
 
 
 def plot_beam(delays=numpy.zeros(16), gains=numpy.ones(16), stokes='I'):

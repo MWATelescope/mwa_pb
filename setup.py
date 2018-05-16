@@ -10,6 +10,6 @@ setup(
   author='MWA Team members, repo managed by Andrew Williams',
   author_email='Andrew.Williams@curtin.edu.au',
   description='MWA Primary beam code',
-  scripts=[],
+  scripts=['beamtest.py', 'make_beam_test.py', 'mwa_sensitivity.py', 'primarybeammap_tant_test.py', 'track_and_suppress.py'],
   install_requires=["numpy", "astropy", "matplotlib", "scipy", "ephem", "h5py"]
 )

@@ -24,9 +24,9 @@ from astropy.io import fits as pyfits
 
 import numpy as np
 
-from primarybeammap_tant import contourlevels, get_beam_power, logger, make_primarybeammap
-import mwa_sweet_spots
-import metadata
+from mwa_pb.primarybeammap_tant import contourlevels, get_beam_power, logger, make_primarybeammap
+from mwa_pb import mwa_sweet_spots
+from mwa_pb import metadata
 
 
 def mkdir_p(path):

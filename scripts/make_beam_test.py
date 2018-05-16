@@ -13,14 +13,13 @@
 """
 
 import logging
+from optparse import OptionParser
 import sys
 
-from optparse import OptionParser
-
-import config
-import make_beam
-
 import astropy.io.fits as pyfits
+
+from mwa_pb import config
+from mwa_pb import make_beam
 
 # configure the logging
 logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')

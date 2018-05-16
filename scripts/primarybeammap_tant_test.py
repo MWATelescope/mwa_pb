@@ -18,7 +18,7 @@ from optparse import OptionParser
 
 import numpy
 
-from primarybeammap_tant import logger, contourlevels, make_primarybeammap
+from mwa_pb.primarybeammap_tant import logger, contourlevels, make_primarybeammap
 
 
 def mkdir_p(path):
