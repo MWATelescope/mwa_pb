@@ -33,6 +33,10 @@ h5fileversion = "UNDEFINED"
 MEAS_DELAYS = os.path.join(datadir, 'meas_delays.txt')
 MEAS_GAINS = os.path.join(datadir, 'meas_gain_db.txt')
 
+# Haslam image:
+radio_image = os.path.join(datadir, 'radio408.RaDec.fits')
+
+
 try:
   import h5py
   h5f = h5py.File(h5file,'r')

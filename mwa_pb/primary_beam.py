@@ -14,9 +14,10 @@ import astropy
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
 
-import config
-import mwa_tile
 import beam_full_EE
+import config
+import metadata
+import mwa_tile
 
 logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger(__name__)  # default logger level is WARNING
@@ -309,38 +310,35 @@ def get_beam_response(obsid,
 
 
   """
-  try:
-    observation = metadata.MWA_Observation(obsid)
-  except:
+  observation = metadata.get_observation(obsid=obsid)
+  if observation is None:
     logger.error('Unable to retrieve metadata for observation %d' % obsid)
     return None
 
-  if observation.duration == 0:
-    logger.error('Unable to retrieve metadata for observation %d' % obsid)
-    return None
-
-  starttimes = numpy.arange(0, observation.duration, dt)
+  duration = observation['starttime'] - observation['stoptime']
+  starttimes = numpy.arange(0, duration, dt)
   stoptimes = starttimes + dt
-  stoptimes[stoptimes > observation.duration] = observation.duration
+  stoptimes[stoptimes > duration] = duration
   Ntimes = len(starttimes)
   midtimes = obsid + 0.5 * (starttimes + stoptimes)
-  logger.info('Will output for %d times from 0 to %ds after %d\n' % (Ntimes, observation.duration, obsid))
+  logger.info('Will output for %d times from 0 to %ds after %d\n' % (Ntimes, duration, obsid))
 
+  channels = observation['rfstreams']['0']['frequencies']
   if not centeronly:
     PowersX = numpy.zeros((len(sources),
                            Ntimes,
-                           len(observation.channels)))
+                           len(channels)))
     PowersY = numpy.zeros((len(sources),
                            Ntimes,
-                           len(observation.channels)))
+                           len(channels)))
     # in Hz
-    frequencies = numpy.array(observation.channels) * 1.28e6
+    frequencies = numpy.array(channels) * 1.28e6
   else:
     PowersX = numpy.zeros((len(sources),
                            Ntimes, 1))
     PowersY = numpy.zeros((len(sources),
                            Ntimes, 1))
-    frequencies = numpy.array([observation.center_channel]) * 1.28e6
+    frequencies = numpy.array([channels[12]]) * 1.28e6   # center channel
   RAs = numpy.array([x[0] for x in sources])
   Decs = numpy.array([x[1] for x in sources])
   if len(RAs) == 0:
@@ -367,7 +365,7 @@ def get_beam_response(obsid,
 
     for ifreq in xrange(len(frequencies)):
       rX, rY = MWA_Tile_analytic(theta, phi,
-                                 freq=frequencies[ifreq], delays=observation.delays,
+                                 freq=frequencies[ifreq], delays=observation['rfstreams']['0']['delays'],
                                  zenithnorm=True,
                                  power=True)
       PowersX[:, itime, ifreq] = rX

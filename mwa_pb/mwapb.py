@@ -145,7 +145,7 @@ class MWA_tile_vpat(object):
     for pat in self.element_patterns:
       pat.set_freq(freq)
 
-  def set_delays(self, delays, ideal=True):
+  def set_delays(self, delays):
     delays = numpy.array(delays)
     if delays.size == 1:
       delays = numpy.tile(delays, 16)
@@ -153,7 +153,7 @@ class MWA_tile_vpat(object):
     if self.delays.size != 16:
       raise ValueError('delays must be a 16-element array')
 
-  def set_gains(self, gains, ideal=True):
+  def set_gains(self, gains):
     gains = numpy.array(gains)
     if gains.size == 1:
       gains = numpy.tile(gains, 16)

@@ -10,5 +10,5 @@ setup(
   author_email='Andrew.Williams@curtin.edu.au',
   description='MWA Primary beam code',
   scripts=[],
-  install_requires=["numpy", "astropy", "matplotlib"]
+  install_requires=["numpy", "astropy", "matplotlib", "scipy", "ephem", "h5py"]
 )

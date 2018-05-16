@@ -23,8 +23,8 @@ from astropy.coordinates import SkyCoord, get_sun
 from astropy.time import Time
 
 import config
-import mwa_sweet_spots
 import primarybeammap_tant
+import mwa_sweet_spots
 
 # configure the logging
 logging.basicConfig()

@@ -135,15 +135,15 @@ def makeUnpolInstrumentalResponse(j1, j2):
   return result
 
 
-def makePolInstrumentResponse(j1, j2, b):
-  """
-     Form the instrument response from two Jones matrices with an
-     arbitrary source brightness matrix, hence arbitrary polarisation
-     Returns: (xx,yy,xy,yx) where "X" and "Y" are defined by the receptors
-     of the Dipole object used in the ApertureArray
-  """
-  # FIXME: need to work out how to do this in vectorised way.
-  pass
+# def makePolInstrumentResponse(j1, j2, b):
+#   """
+#      Form the instrument response from two Jones matrices with an
+#      arbitrary source brightness matrix, hence arbitrary polarisation
+#      Returns: (xx,yy,xy,yx) where "X" and "Y" are defined by the receptors
+#      of the Dipole object used in the ApertureArray
+#   """
+#   # FIXME: need to work out how to do this in vectorised way.
+#   pass
 
 
 def plotArrayJones(j, freq, filebase, title, pix_per_deg=1, j_1D=None, gridded=False):

@@ -212,13 +212,12 @@ def make_beam(filename, ext=0, delays=None,
         if not jones:
           rX, rY = primary_beam.MWA_Tile_advanced(theta, phi,
                                                   freq=frequencies[freqindex],
-                                                  delays=delays, zenithnorm=True,
+                                                  delays=delays,
                                                   power=True)
         else:
           J = primary_beam.MWA_Tile_advanced(theta, phi,
                                              freq=frequencies[freqindex],
                                              delays=delays,
-                                             zenithnorm=True,
                                              jones=True)
 
     except Exception, e:

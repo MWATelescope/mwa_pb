@@ -10,10 +10,7 @@ import logging
 import math
 import os
 
-try:
-  import astropy.io.fits as pyfits
-except ImportError:
-  import pyfits
+import astropy.io.fits as pyfits
 
 import numpy
 
@@ -25,13 +22,11 @@ from scipy.interpolate import RegularGridInterpolator
 
 import astropy
 from astropy.time import Time
-from astropy import units
-from astropy.coordinates import SkyCoord, EarthLocation
+from astropy.coordinates import SkyCoord, Angle, AltAz, ICRS
 
-import mwapy
-from mwapy import ephem_utils
-import primary_beam
+import config
 import beam_tools
+import primary_beam
 import mwa_tile
 
 EPS = numpy.finfo(numpy.float64).eps  # machine epsilon
@@ -45,9 +40,6 @@ logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger('primarybeammap')
 logger.setLevel(logging.WARNING)
 
-radio_image = 'radio408.RaDec.fits'
-
-MWA_POS = EarthLocation.from_geodetic(lon="116:40:14.93", lat="-26:42:11.95", height=377.8)
 
 # information for the individual sources to label
 # for each, give the name, RA, Dec, color, fontsize, and justification
@@ -133,7 +125,7 @@ def get_azza_arrays_fov(gridsize=361, fov=180.0):
 
 
 ######################################################################
-def map_sky(skymap, lst, lat, az_grid, za_grid):
+def map_sky(skymap, obstime, az_grid, za_grid):
   """
     Converted from Randall Wayth's IDL code.
 
@@ -141,14 +133,20 @@ def map_sky(skymap, lst, lat, az_grid, za_grid):
   """
   out = az_grid * 0.0  # new array for gridded sky
 
-  ha_grid, dec_grid = ephem_utils.horz2eq(az_grid, 90 - za_grid, lat)  # get grid in ha, dec
+  grid = AltAz(az=Angle(az_grid, unit=astropy.units.deg),
+               alt=Angle(90 - za_grid, unit=astropy.units.deg),
+               obstime=obstime,
+               location=config.MWAPOS)
+  grid_equatorial = grid.transform_to(ICRS)
+  ra = grid_equatorial.ra.hour
+  dec_grid = grid_equatorial.dec.deg
+
   size_dec = skymap.shape[0]
   size_ra = skymap.shape[1]
   p = za_grid < 90.0 + EPS  # array indices for visible sky
 
   # the following assumes RA=0 in centre
   # of the sky image and increases to the left.
-  ra = (lst - ha_grid / 15.0) % 24.0
   ra_index = (((36 - ra) % 24) / 24) * size_ra
   dec_index = (dec_grid / 180.0 + 0.5) * size_dec
 
@@ -214,7 +212,7 @@ def eq2horz(ra, dec, gps):
     time - GPS time
   """
   coords = SkyCoord(ra=ra, dec=dec, equinox='J2000', unit=astropy.units.deg)
-  coords.location = MWA_POS
+  coords.location = config.MWAPOS
 
   # convert GPS to an astropy time object
   coords.obstime = Time(gps, format='gps', scale='utc')
@@ -242,7 +240,7 @@ def horz2eq(az, ZA, gps):
                     frame='altaz',
                     unit=astropy.units.deg,
                     equinox='J2000',
-                    location=MWA_POS)
+                    location=config.MWAPOS)
 
   # convert GPS to an astropy time object
   #    coords.obstime=Time(gps,format='gps',scale='utc')
@@ -250,20 +248,14 @@ def horz2eq(az, ZA, gps):
   return {'RA': coords.icrs.ra.deg, 'dec': coords.icrs.dec.deg}
 
 
-def get_Haslam(freq, dirname=None, scaling=-2.55):
+def get_Haslam(freq, scaling=-2.55):
   """
     get the Haslam 408 MHz map.
     Outputs
     RA - RA in degrees (-180 - 180)
     dec - dec in degrees
   """
-  if dirname is None:
-    dirname = os.path.join(os.path.dirname(mwapy.__file__), 'data')
-
-  if not dirname:
-    dirname = '.'
-
-  radio_image_touse = os.path.join(dirname, radio_image)
+  radio_image_touse = config.radio_image
   # radio_image_touse='/data/das4/packages/MWA_Tools/mwapy/pb/radio408.RaDec.fits'
   # radio_image_touse=radio_image
   if not os.path.exists(radio_image_touse):
@@ -291,14 +283,14 @@ def get_Haslam(freq, dirname=None, scaling=-2.55):
 
 def get_LST(gps):
   time = Time(gps, format='gps', scale='utc')
-  time.delta_ut1_utc = 0.
-  LST = time.sidereal_time('apparent', MWA_POS.longitude.value)
-  return LST.value  # keep as decimal hr
+  time.delta_ut1_utc = 0.0
+  LST = time.sidereal_time('mean', config.MWAPOS.lon.hour)
+  return LST.hour  # keep as decimal hr
 
 
 # FIXME: most the arguments in make_primarybeammap are not needed
 def make_primarybeammap(gps, delays, frequency, model, extension='png',
-                        plottype='beamsky', figsize=14, title=None, directory=None, resolution=1000, zenithnorm=True,
+                        plottype='beamsky', figsize=14, directory=None, resolution=1000, zenithnorm=True,
                         b_add_sources=False):
   """
   """
@@ -309,7 +301,7 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
   za_grid = za_grid * 180 / math.pi
   # az_grid+=180.0
   alt_grid = 90 - (za_grid)
-  lst = get_LST(gps)
+  obstime = Time(gps, format='gps', scale='utc')
 
   # first go from altitude to zenith angle
   theta = (90 - alt_grid) * math.pi / 180
@@ -325,9 +317,9 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
     print "Using adanced model ???"
     beams['XX'], beams['YY'] = primary_beam.MWA_Tile_advanced(theta, phi,
                                                               freq=frequency, delays=delays,
-                                                              zenithnorm=zenithnorm, power=True)
+                                                              power=True)
   elif model == 'full_EE' or model == '2016' or model == 'FEE' or model == 'Full_EE':
-    model_ver = '02'
+    # model_ver = '02'
     # h5filepath = 'MWA_embedded_element_pattern_V' + model_ver + '.h5'
     beams['XX'], beams['YY'] = primary_beam.MWA_Tile_full_EE(theta, phi,
                                                              freq=frequency, delays=delays,
@@ -365,7 +357,7 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
   (ax0, ay0) = tile.getArrayFactor(az_grid, za_grid, frequency, za_delays[za_delay])
   val = numpy.abs(ax0)
   val_max = numpy.nanmax(val)
-  print "VALUE : %.8f %.8f %.8f" % (frequency, val_max, val[resolution / 2, resolution / 2])
+  print "VALUE : %.8f %.8f %.8f" % (frequency, val_max[0], val[resolution / 2, resolution / 2])
 
   beamsky_sum_XX = 0
   beam_sum_XX = 0
@@ -414,22 +406,22 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
       if pt == 'beamsky':
         textlabel = 'Beam x sky %s (LST %.2f hr), %s MHz, %s-pol, Tant=%.1f K' % (gps, get_LST(gps), fstring, pol, Tant)
         plot_beamsky(beamsky, frequency, textlabel, filename, extension,
-                     figsize=figsize, directory=directory, lst=lst)
+                     obstime=obstime, figsize=figsize, directory=directory)
       elif pt == 'beamsky_scaled':
         textlabel = 'Beam x sky (scaled) %s (LST %.2f hr), %s MHz, %s-pol, Tant=%.1f K (max T=%.1f K)' % \
-                    (gps, get_LST(gps), fstring, pol, Tant, numpy.nanmax(beamsky))
+                    (gps, get_LST(gps), fstring, pol, Tant, numpy.nanmax(beamsky)[0])
         plot_beamsky(beamsky, frequency, textlabel, filename + '_scaled', extension,
-                     figsize=figsize, vmax=numpy.nanmax(beamsky) * 0.4, directory=directory, lst=lst)
+                     obstime=obstime, figsize=figsize, vmax=numpy.nanmax(beamsky) * 0.4, directory=directory)
 
       elif pt == 'beam':
         textlabel = 'Beam for %s, %s MHz, %s-pol' % (gps, fstring, pol)
         plot_beamsky(beam, frequency, textlabel, filename + '_beam', extension,
-                     figsize=figsize, cbar_label='', directory=directory, lst=lst, b_add_sources=b_add_sources,
+                     obstime=obstime, figsize=figsize, cbar_label='', directory=directory, b_add_sources=b_add_sources,
                      resolution=resolution, az_grid=az_grid, za_grid=za_grid)
       elif pt == 'sky':
         textlabel = 'Sky for %s (LST %.2f hr), %s MHz, %s-pol' % (gps, get_LST(gps), fstring, pol)
         plot_beamsky(sky_grid, frequency, textlabel, filename + '_sky', extension,
-                     figsize=figsize, directory=directory, lst=lst, b_add_sources=b_add_sources, resolution=resolution,
+                     obstime=obstime, figsize=figsize, directory=directory, b_add_sources=b_add_sources, resolution=resolution,
                      az_grid=az_grid, za_grid=za_grid)
 
   return (beamsky_sum_XX,
@@ -464,7 +456,7 @@ def get_beam_power(gps, delays, frequency, model, pointing_az_deg=0, pointing_za
   elif model == 'avg_EE' or model == 'advanced' or model == '2015':
     beams['XX'], beams['YY'] = primary_beam.MWA_Tile_advanced(theta, phi,
                                                               freq=frequency, delays=delays,
-                                                              zenithnorm=zenithnorm, power=True)
+                                                              power=True)
   elif model == 'full_EE' or model == '2016' or model == 'FEE' or model == 'Full_EE':
     # model_ver = '02'
     # h5filepath = 'MWA_embedded_element_pattern_V' + model_ver + '.h5'
@@ -480,22 +472,27 @@ def get_beam_power(gps, delays, frequency, model, pointing_az_deg=0, pointing_za
   return beams
 
 
-def add_sources(lst, fig, ax1, ax2, resolution=1000, az_grid=None, za_grid=None, beamsky=None):
-  mwa = ephem_utils.Obs[ephem_utils.obscode['MWA']]
+def add_sources(fig, ax1, ax2, obstime=None, az_grid=None, za_grid=None, beamsky=None):
+  """Note that this function does nothing, apart from printing some coordinates.
+  """
+  obstime.location = config.MWAPOS
+  obstime.delta_ut1_utc = 0
+  lst = obstime.sidereal_time(kind='mean').hour
 
   print "------------------------------"
-  print "Adding sources for lst=%.2f [hours] , coordinates = (%.4f,%.4f) [deg]:" % (lst, mwa.long, mwa.lat)
+  print "Adding sources for lst=%.2f [hours] , coordinates = (%.4f,%.4f) [deg]:" % (lst, config.MWAPOS.lon.deg, config.MWAPOS.lat.deg)
   print "------------------------------"
   # add text for sources
   # lst=get_LST(gps)
-  LST_hours = lst
 
   for source in sources:
-    RA = ephem_utils.sexstring2dec(sources[source][1]) * 15.00
-    Dec = ephem_utils.sexstring2dec(sources[source][2])
-
-    HA = LST_hours * 15 - RA
-    az, alt = ephem_utils.eq2horz(HA, Dec, mwa.lat)
+    RA = Angle(sources[source][1], unit=astropy.units.hour).deg
+    Dec = Angle(sources[source][2], unit=astropy.units.deg).deg
+    coords = SkyCoord(ra=RA, dec=Dec, equinox='J2000', unit=(astropy.units.deg, astropy.units.deg))
+    coords.location = config.MWAPOS
+    coords.obstime = obstime
+    coords_prec = coords.transform_to('altaz')
+    az, alt = coords_prec.az.deg, coords_prec.alt.deg
     za = 90.00 - alt
 
     x_best = -1
@@ -540,10 +537,12 @@ def add_sources(lst, fig, ax1, ax2, resolution=1000, az_grid=None, za_grid=None,
 
 def plot_beamsky(beamsky, frequency, textlabel, filename, extension,
                  figsize=8, vmax=None, cbar_label='beam x Tsky (K)',
-                 directory=None, dec=-26.7033, lst=0,
+                 directory=None, dec=-26.7033, obstime=None,
                  b_add_sources=False, resolution=1000, gps=0, az_grid=None, za_grid=None):
   # do the plotting
   # this sets up the figure with the right aspect ratio
+  obstime.delta_ut1_utc = 0.0
+  lst = obstime.sidereal_time('mean', config.MWAPOS.lon.hour).hour
 
   fig = pylab.figure(figsize=(figsize, 0.6 * figsize), dpi=300)
   pylab.axis('on')
@@ -575,7 +574,7 @@ def plot_beamsky(beamsky, frequency, textlabel, filename, extension,
   ax1.set_title(textlabel + '\n\n')
 
   if b_add_sources:
-    add_sources(lst, fig, ax1, ax2, resolution=resolution, az_grid=az_grid, za_grid=za_grid, beamsky=beamsky)
+    add_sources(fig, ax1, ax2, obstime=obstime, az_grid=az_grid, za_grid=za_grid, beamsky=beamsky)
 
   full_filename = filename
   if directory is not None:

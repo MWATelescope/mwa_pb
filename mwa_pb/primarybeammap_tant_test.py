@@ -11,6 +11,7 @@
   This is the script interface to the functions and modules defined in MWA_Tools/src/primarybeamap.py
 """
 
+import errno
 import os
 import sys
 from optparse import OptionParser
@@ -18,7 +19,6 @@ from optparse import OptionParser
 import numpy
 
 from primarybeammap_tant import logger, contourlevels, make_primarybeammap
-import errno
 
 
 def mkdir_p(path):

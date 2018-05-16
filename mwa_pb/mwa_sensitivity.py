@@ -26,6 +26,7 @@ import numpy as np
 
 from primarybeammap_tant import contourlevels, get_beam_power, logger, make_primarybeammap
 import mwa_sweet_spots
+import metadata
 
 
 def mkdir_p(path):
@@ -325,10 +326,10 @@ def main():
   gridpoint = -1
   if options.use_db:
     if options.gps > 0:
-      print "Not supported, ask Andrew Williams to fix this using a metadata web service."
-      sys.exit(1)
-      # print "INFO : Reading information from MWA database ..."
-      # (delays, gridpoint) = mwa_db_query.get_delays_obsid(int(options.gps), raw_delays=True)
+      print "INFO : Reading information from MWA metadata web service ..."
+      obs = metadata.get_observation(obsid=options.gps)
+      delays = obs['rfstreams']['0']['delays']
+      gridpoint = obs['metadata']['gridpoint_number']
   else:
     if options.gridpoint >= 0:
       gridpoint = options.gridpoint

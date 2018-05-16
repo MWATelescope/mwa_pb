@@ -1,6 +1,10 @@
-from matplotlib import pyplot
-import numpy
+
 import math
+
+import numpy
+
+from matplotlib import pyplot
+
 import mwapb
 
 

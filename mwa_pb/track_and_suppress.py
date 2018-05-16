@@ -20,8 +20,8 @@ import astropy
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 
-import mwaconfig
-from pb.suppress import MWAPOS, get_best_gridpoints_supress_sun, get_best_gridpoints
+import config
+from suppress import get_best_gridpoints_supress_sun, get_best_gridpoints
 
 # configure the logging
 logging.basicConfig(filename='/tmp/suppress.log', format='# %(levelname)s:%(name)s: %(message)s')
@@ -190,7 +190,7 @@ if __name__ == '__main__':
                                     duration=options.duration,
                                     step=step)
 
-  start_time.location = MWAPOS
+  start_time.location = config.MWAPOS
 
   if options.outfile is None:
      # 20170216_cmdfile_J112537_LST9.91.txt
@@ -226,7 +226,7 @@ if __name__ == '__main__':
   for entry in tracklist:
     otime, step, az, alt = entry
     obstime = Time(otime, format='gps', scale='utc')
-    pos = SkyCoord(az, alt, frame='altaz', unit=(astropy.units.deg, astropy.units.deg), location=MWAPOS, obstime=obstime)
+    pos = SkyCoord(az, alt, frame='altaz', unit=(astropy.units.deg, astropy.units.deg), location=config.MWAPOS, obstime=obstime)
     posrd = pos.transform_to('icrs')
     if options.radec:
       command = "single_observation.py --creator=%(creator)s --starttime=%(otime)s --stoptime=++%(step)s --freq=%(channel)d,24 "

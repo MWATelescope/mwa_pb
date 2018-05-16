@@ -513,8 +513,8 @@ class Beam(object):
         phi_unique, phi_index = np.unique(phi_arr, return_inverse=True)
         theta_unique, theta_index = np.unique(theta_arr, return_inverse=True)  # speeds up calculations
       else:  # We expect all to be unique
-        phi_unique = phi_arr
-        theta_unique = theta_arr
+        phi_unique, phi_index = phi_arr, None
+        theta_unique, theta_index = theta_arr, None
 
       # Rick 16-3-2017
       # calculate phi-dependent component ( phi_comp ), but only for each unique M  (!!)

@@ -2,6 +2,7 @@
 """
 
 import logging
+
 import numpy
 
 import matplotlib.pyplot as plt

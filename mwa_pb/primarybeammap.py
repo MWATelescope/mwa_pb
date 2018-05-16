@@ -11,23 +11,21 @@ import datetime
 import logging
 import math
 import os
-import time
 
-try:
-  import astropy.io.fits as pyfits
-except ImportError:
-  import pyfits
+import astropy
+from astropy.coordinates import SkyCoord, get_sun, get_body, AltAz, Angle, ICRS
+from astropy.time import Time, TimeDelta
+from astropy.io import fits as pyfits
 
 import numpy
-
-import ephem
 
 import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as pylab
 
-import mwapy
-from mwapy import ephem_utils
+import ephem
+
+import config
 import primary_beam
 
 
@@ -82,110 +80,57 @@ logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger('primarybeammap')
 logger.setLevel(logging.WARNING)
 
-radio_image = 'radio408.RaDec.fits'
+radio_image = config.radio_image
 
 
 ######################################################################
-def sunposition(yr, mn, dy, UT):
+def sunposition(t=None):
   """
-    ra,dec,az,alt=sunposition(yr,mn,dy,UT)
+    ra,dec,az,alt=sunposition(t) where t is an astropy.time.Time object
     all returned values are in degrees
   """
-  mwa = ephem_utils.Obs[ephem_utils.obscode['MWA']]
-  observer = ephem.Observer()
-  observer.long = mwa.long / ephem_utils.DEG_IN_RADIAN
-  observer.lat = mwa.lat / ephem_utils.DEG_IN_RADIAN
-  observer.elevation = mwa.elev
-  s = str(UT)
-  if (s.count(':') > 0):
-    # it's hh:mm:ss
-    # so leave it
-    UTs = UT
-  else:
-    UTs = ephem_utils.dec2sexstring(UT, digits=0, roundseconds=0)
-  observer.date = '%d/%d/%d %s' % (yr, mn, dy, UTs)
-  sun = ephem.Sun()
-  sun.compute(observer)
-  az = sun.az * ephem_utils.DEG_IN_RADIAN
-  alt = sun.alt * ephem_utils.DEG_IN_RADIAN
-  ra = sun.ra * ephem_utils.DEG_IN_RADIAN
-  dec = sun.dec * ephem_utils.DEG_IN_RADIAN
-
-  return (ra, dec, az, alt)
+  sun = get_sun(t)
+  sun.location = config.MWAPOS
+  sun_prec = sun.transform_to('altaz')
+  return (sun_prec.ra.deg, sun_prec.de.deg, sun_prec.az.deg, sun_prec.alt.deg)
 
 
 ######################################################################
-def moonposition(yr, mn, dy, UT):
+def moonposition(t=None):
   """
-    ra,dec,az,alt=moonposition(yr,mn,dy,UT)
+    ra,dec,az,alt=moonposition(t) where t is an astropy.time.Time object
     all returned values are in degrees
   """
-  mwa = ephem_utils.Obs[ephem_utils.obscode['MWA']]
-  observer = ephem.Observer()
-  observer.long = mwa.long / ephem_utils.DEG_IN_RADIAN
-  observer.lat = mwa.lat / ephem_utils.DEG_IN_RADIAN
-  observer.elevation = mwa.elev
-  s = str(UT)
-  if (s.count(':') > 0):
-    # it's hh:mm:ss
-    # so leave it
-    UTs = UT
-  else:
-    UTs = ephem_utils.dec2sexstring(UT, digits=0, roundseconds=0)
-  observer.date = '%d/%d/%d %s' % (yr, mn, dy, UTs)
-  moon = ephem.Moon()
-  moon.compute(observer)
-  az = moon.az * ephem_utils.DEG_IN_RADIAN
-  alt = moon.alt * ephem_utils.DEG_IN_RADIAN
-  ra = moon.ra * ephem_utils.DEG_IN_RADIAN
-  dec = moon.dec * ephem_utils.DEG_IN_RADIAN
-
-  return (ra, dec, az, alt)
+  moon = get_body('Moon', t)
+  moon.location = config.MWAPOS
+  moon_prec = moon.transform_to('altaz')
+  return (moon_prec.ra.deg, moon_prec.de.deg, moon_prec.az.deg, moon_prec.alt.deg)
 
 
 ######################################################################
-def jupiterposition(yr, mn, dy, UT):
+def jupiterposition(t=None):
   """
-    ra,dec,az,alt=jupiterposition(yr,mn,dy,UT)
+    ra,dec,az,alt=jupiterposition(t) where t is an astropy.time.Time object
     all returned values are in degrees
   """
-  mwa = ephem_utils.Obs[ephem_utils.obscode['MWA']]
-  observer = ephem.Observer()
-  observer.long = mwa.long / ephem_utils.DEG_IN_RADIAN
-  observer.lat = mwa.lat / ephem_utils.DEG_IN_RADIAN
-  observer.elevation = mwa.elev
-  s = str(UT)
-  if (s.count(':') > 0):
-    # it's hh:mm:ss
-    # so leave it
-    UTs = UT
-  else:
-    UTs = ephem_utils.dec2sexstring(UT, digits=0, roundseconds=0)
-  observer.date = '%d/%d/%d %s' % (yr, mn, dy, UTs)
-  jupiter = ephem.Jupiter()
-  jupiter.compute(observer)
-  az = jupiter.az * ephem_utils.DEG_IN_RADIAN
-  alt = jupiter.alt * ephem_utils.DEG_IN_RADIAN
-  ra = jupiter.ra * ephem_utils.DEG_IN_RADIAN
-  dec = jupiter.dec * ephem_utils.DEG_IN_RADIAN
-
-  return (ra, dec, az, alt)
+  jupiter = get_body('Jupiter', t)
+  jupiter.location = config.MWAPOS
+  jupiter_prec = jupiter.transform_to('altaz')
+  return (jupiter_prec.ra.deg, jupiter_prec.de.deg, jupiter_prec.az.deg, jupiter_prec.alt.deg)
 
 
 ######################################################################
 def sunpositions():
   """
     ra,dec=sunpositions()
-    returns the ra,dec in degrees for the Sun for every day of the year
+    returns the ra,dec in degrees for the Sun for every day of the year 2011
   """
   ra = []
   dec = []
-  for y in xrange(1, 366):
-    t = time.strptime("2011 %03d" % y, "%Y %j")
-    ras, decs, y, z = sunposition(t.tm_year,
-                                  t.tm_mon,
-                                  t.tm_mday,
-                                  '00:00:00')
+  t = Time('2011-01-01 00:00:00', scale='utc')
+  dt = TimeDelta(86400, format='sec')
+  for daynum in xrange(1, 366):
+    ras, decs, y, z = sunposition(t)
     if (ras > 180):
       ras -= 360
     if (ras < -180):
@@ -193,6 +138,8 @@ def sunpositions():
 
     ra.append(ras)
     dec.append(decs)
+    t += dt
+
   return ra, dec
 
 
@@ -228,8 +175,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
     low = 1
 
   # get the Haslam 408 MHz map
-  basepath = os.path.join(os.path.split(mwapy.__file__)[0], 'data')
-  radio_image_touse = os.path.join(basepath, radio_image)
+  radio_image_touse = radio_image
 
   if not os.path.exists(radio_image_touse):
     logger.error("Could not find 408 MHz image: %s\n" % (radio_image_touse))
@@ -272,22 +218,20 @@ def make_primarybeammap(datetimestring, delays, frequency,
   except ValueError:
     logger.error('Could not parse datetimestring %s\n' % datetimestring)
     return None
-  UT = hour + minute / 60.0 + second / 3600.0
+  # UT = hour + minute / 60.0 + second / 3600.0
   UTs = '%02d:%02d:%02d' % (hour, minute, second)
-  mwa = ephem_utils.Obs[ephem_utils.obscode['MWA']]
 
   # determine the LST
   observer = ephem.Observer()
   # make sure no refraction is included
   observer.pressure = 0
-  observer.long = mwa.long / ephem_utils.DEG_IN_RADIAN
-  observer.lat = mwa.lat / ephem_utils.DEG_IN_RADIAN
-  observer.elevation = mwa.elev
+  observer.long = config.MWAPOS.lon.rad
+  observer.lat = config.MWAPOS.lat.rad
+  observer.elevation = config.MWAPOS.height.value   # in metres
   observer.date = '%d/%d/%d %s' % (yr, mn, dy, UTs)
-  LST_hours = observer.sidereal_time() * ephem_utils.HRS_IN_RADIAN
-  LST = ephem_utils.dec2sexstring(LST_hours, digits=0, roundseconds=1)
+  LST_hours = observer.sidereal_time() * 180.0 / math.pi / 15.0
   if (verbose):
-    print "For %02d-%02d-%02d %s UT, LST=%s" % (yr, mn, dy, UTs, LST)
+    print "For %02d-%02d-%02d %s UT, LST=%s" % (yr, mn, dy, UTs, observer.sidereal_time())
 
   # this will be the center of the image
   RA0 = 0
@@ -299,23 +243,30 @@ def make_primarybeammap(datetimestring, delays, frequency,
 
   # use LST to get Az,Alt grid for image
   RA, Dec = numpy.meshgrid(ra * 15, dec)
-  # HA=RA-LST_hours*15
-  HA = -RA + LST_hours * 15
-  Az, Alt = ephem_utils.eq2horz(HA, Dec, mwa.lat)
+  obstime = Time('%d-%d-%d %s' % (yr, mn, dy, UTs), scale='utc')
+
+  coords = SkyCoord(ra=RA, dec=Dec, equinox='J2000', unit=(astropy.units.deg, astropy.units.deg))
+  coords.location = config.MWAPOS
+  coords.obstime = obstime
+  coords_prec = coords.transform_to('altaz')
+  Az, Alt = coords_prec.az.deg, coords_prec.alt.deg
 
   # get the horizon line
   Az_Horz = numpy.arange(360.0)
   Alt_Horz = numpy.zeros(Az_Horz.shape)
-  HA_Horz, Dec_Horz = ephem_utils.horz2eq(Az_Horz, Alt_Horz, mwa.lat)
-  # RA_Horz=HA_Horz+LST_hours*15
-  RA_Horz = -HA_Horz + LST_hours * 15
+  horizon = AltAz(az=Angle(Az_Horz, unit=astropy.units.deg),
+                  alt=Angle(Alt_Horz, unit=astropy.units.deg),
+                  obstime=obstime,
+                  location=config.MWAPOS)
+  hequatorial = horizon.transform_to(ICRS)
+  RA_Horz, Dec_Horz = hequatorial.ra.deg, hequatorial.dec.deg
   RA_Horz[numpy.where(RA_Horz > 180 + RA0)[0]] -= 360
   RA_Horz[numpy.where(RA_Horz < -180 + RA0)[0]] += 360
 
   maskedskymap = numpy.where(Alt > 0, skymap, numpy.nan)
 
   # figure out where the Sun will be
-  RAsun, Decsun, Azsun, Altsun = sunposition(yr, mn, dy, UT)
+  RAsun, Decsun, Azsun, Altsun = sunposition(obstime)
   if (RAsun > 180 + RA0):
     RAsun -= 360
   if (RAsun < -180 + RA0):
@@ -323,7 +274,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
   RAsuns, Decsuns = sunpositions()
   RAsuns = numpy.array(RAsuns)
   Decsuns = numpy.array(Decsuns)
-  # HAsuns=RAsuns-LST_hours*15
+
   HAsuns = -RAsuns + LST_hours * 15
   RAsuns = numpy.where(RAsuns > 180 + RA0, RAsuns - 360, RAsuns)
   RAsuns = numpy.where(RAsuns < -180 + RA0, RAsuns + 360, RAsuns)
@@ -349,38 +300,39 @@ def make_primarybeammap(datetimestring, delays, frequency,
   ax1 = fig.add_subplot(1, 1, 1)
   # this is the Haslam map, plotted as a log-scale
   # it is slightly transparent since this does below the horizon too
-  i2 = ax1.imshow(numpy.log10(skymap),
-                  cmap=pylab.cm.gray_r,
-                  aspect='auto',
-                  vmin=math.log10(low),
-                  vmax=math.log10(high),
-                  origin='lower',
-                  extent=(ra[0], ra[-1], dec[0], dec[-1]),
-                  alpha=0.9)
-  i1 = ax1.imshow(numpy.log10(maskedskymap),
-                  cmap=pylab.cm.gray_r,
-                  aspect='auto',
-                  vmin=0,
-                  vmax=math.log10(2000),
-                  origin='lower',
-                  extent=(ra[0], ra[-1], dec[0], dec[-1]))
+  ax1.imshow(numpy.log10(skymap),
+             cmap=pylab.cm.get_cmap('gray_r'),
+             aspect='auto',
+             vmin=math.log10(low),
+             vmax=math.log10(high),
+             origin='lower',
+             extent=(ra[0], ra[-1], dec[0], dec[-1]),
+             alpha=0.9)
+  ax1.imshow(numpy.log10(maskedskymap),
+             cmap=pylab.cm.get_cmap('gray_r'),
+             aspect='auto',
+             vmin=0,
+             vmax=math.log10(2000),
+             origin='lower',
+             extent=(ra[0], ra[-1], dec[0], dec[-1]))
   # this is the Haslam map but only above the horizon
-  i2b = ax1.imshow(numpy.log10(skymap),
-                   cmap=pylab.cm.gray_r,
-                   aspect='auto',
-                   vmin=math.log10(low),
-                   vmax=math.log10(high),
-                   origin='lower',
-                   extent=(ra[0] + 24, ra[-1] + 24, dec[0], dec[-1]),
-                   alpha=0.9)
-  i1b = ax1.imshow(numpy.log10(maskedskymap),
-                   cmap=pylab.cm.gray_r,
-                   aspect='auto',
-                   vmin=math.log10(low),
-                   vmax=math.log10(high),
-                   origin='lower',
-                   extent=(ra[0] + 24, ra[-1] + 24, dec[0], dec[-1]))
+  ax1.imshow(numpy.log10(skymap),
+             cmap=pylab.cm.get_cmap('gray_r'),
+             aspect='auto',
+             vmin=math.log10(low),
+             vmax=math.log10(high),
+             origin='lower',
+             extent=(ra[0] + 24, ra[-1] + 24, dec[0], dec[-1]),
+             alpha=0.9)
+  ax1.imshow(numpy.log10(maskedskymap),
+             cmap=pylab.cm.get_cmap('gray_r'),
+             aspect='auto',
+             vmin=math.log10(low),
+             vmax=math.log10(high),
+             origin='lower',
+             extent=(ra[0] + 24, ra[-1] + 24, dec[0], dec[-1]))
 
+  contourcolors = ['r', 'c', 'y', 'm', 'w', 'g', 'b']
   if (isinstance(frequency, float) or isinstance(frequency, int)):
     if (verbose):
       print "Creating primary beam response for frequency %.2f MHz..." % (frequency)
@@ -402,7 +354,6 @@ def make_primarybeammap(datetimestring, delays, frequency,
     ax1.contour(RA / 15.0 - 24, Dec, Z2, contourlevels, colors='r')
     ax1.contour(RA / 15.0 + 24, Dec, Z2, contourlevels, colors='r')
   else:
-    contourcolors = ['r', 'c', 'y', 'm', 'w', 'g', 'b']
     icolor = 0
     for f in frequency:
       color = contourcolors[icolor]
@@ -431,7 +382,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
 
   # plot the horizon line
   RA_Horz, Dec_Horz = zip(*sorted(zip(RA_Horz, Dec_Horz)))
-  p1 = ax1.plot(numpy.array(RA_Horz) / 15.0, numpy.array(Dec_Horz), 'k')
+  ax1.plot(numpy.array(RA_Horz) / 15.0, numpy.array(Dec_Horz), 'k')
   x1 = 12 + RA0 / 15
   x2 = -12 + RA0 / 15
   ax1.set_xlim(left=x1, right=x2)
@@ -456,7 +407,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
     ax1.plot(numpy.array(RAsuns) / 15.0, numpy.array(Decsuns), 'y-')
 
   if moon:
-    RAmoon, Decmoon, Azmoon, Altmoon = moonposition(yr, mn, dy, UT)
+    RAmoon, Decmoon, Azmoon, Altmoon = moonposition(obstime)
     if (RAmoon > 180 + RA0):
       RAmoon -= 360
     if (RAmoon < -180 + RA0):
@@ -465,7 +416,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
     print RAmoon, Decmoon
 
   if jupiter:
-    RAjupiter, Decjupiter, Azjupiter, Altjupiter = jupiterposition(yr, mn, dy, UT)
+    RAjupiter, Decjupiter, Azjupiter, Altjupiter = jupiterposition(obstime)
     if (RAjupiter > 180 + RA0):
       RAjupiter -= 360
     if (RAjupiter < -180 + RA0):
@@ -474,8 +425,12 @@ def make_primarybeammap(datetimestring, delays, frequency,
     print RAjupiter, Decjupiter
 
   if len(ra_sat) > 0:
-    HAsat = -numpy.array(ra_sat) + LST_hours * 15
-    Azsat, Altsat = ephem_utils.eq2horz(HAsat, numpy.array(dec_sat), mwa.lat)
+    coords = SkyCoord(ra=ra_sat, dec=dec_sat, equinox='J2000', unit=(astropy.units.deg, astropy.units.deg))
+    coords.location = config.MWAPOS
+    coords.obstime = obstime
+    coords_prec = coords.transform_to('altaz')
+    Azsat, Altsat = coords_prec.az.deg, coords_prec.alt.deg
+
     rsat = return_beam(Altsat, Azsat, delays, frequency)
     ax1.plot(numpy.array(ra_sat) / 15.0, numpy.array(dec_sat), 'c-')
     ax1.scatter(numpy.array(ra_sat) / 15.0,
@@ -483,7 +438,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
                 # c=numpy.arange(len(ra_sat))/(1.0*len(ra_sat)),
                 # cmap=pylab.cm.hsv,
                 c=1 - rsat,
-                cmap=pylab.cm.Blues,
+                cmap=pylab.cm.get_cmap('Blues'),
                 alpha=0.5,
                 edgecolors='none')
     ax1.text(ra_sat[0] / 15.0,
@@ -522,8 +477,8 @@ def make_primarybeammap(datetimestring, delays, frequency,
 
   # add text for sources
   for source in sources:
-    r = ephem_utils.sexstring2dec(sources[source][1])
-    d = ephem_utils.sexstring2dec(sources[source][2])
+    r = Angle(sources[source][1], unit=astropy.units.hour).hour
+    d = Angle(sources[source][2], unit=astropy.units.deg).deg
     horizontalalignment = 'left'
     x = r - 0.2
     if (len(sources[source]) >= 6 and sources[source][5] == 'c'):
@@ -582,7 +537,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
     # x1b=x1-LST_hours
     # x2b=x2-LST_hours
     x1b = -x1 + LST_hours
-    x2b = -x2 + LST_hours
+    # x2b = -x2 + LST_hours
     while (x1b < 0):
       x1b += 24
     while (x1b > 24):
@@ -654,6 +609,30 @@ def return_beam(Alt, Az, delays, frequency):
 
 
 ######################################################################
+def putrange(x, r=24):
+  """
+  Puts a value in the range [0,r)
+
+  :param x: value
+  :param r: maximum of range
+  :return: value in [0,r)
+  """
+
+  if (not isinstance(x, numpy.ndarray)):
+    while (x < 0):
+      x += r
+    while (x >= r):
+      x -= r
+    return x
+  else:
+    # numpy version
+    while (numpy.any(x < 0)):
+      x[x < 0] += r
+    while (numpy.any(x >= r)):
+      x[x >= r] -= r
+    return x
+
+
 def satellite_positions(satellite, observer, time0, DT, RA0=0):
   """
   ra_sat,dec_sat,time_sat,long_sat,lat_sat=primarybeammap.satellite_positions(satellite,
@@ -670,30 +649,30 @@ def satellite_positions(satellite, observer, time0, DT, RA0=0):
     compute_time = time0 + datetime.timedelta(seconds=dt)
     observer.date = compute_time.strftime('%Y/%m/%d %H:%M:%S')
     satellite.compute(observer)
-    x = satellite.ra * ephem_utils.DEG_IN_RADIAN
-    y = satellite.dec * ephem_utils.DEG_IN_RADIAN
+    x = satellite.ra * 180.0 / math.pi
+    y = satellite.dec * 180.0 / math.pi
     if len(ra_sat) > 1 and ra_sat[-1] != numpy.nan:
       if ( (x > 180 + RA0) and
            (ra_sat[-1] < 180 + RA0) and
            (ra_sat[-1] > 0 + RA0) and
-           ((x - ephem_utils.putrange(ra_sat[-1], 360)) < 180) ):
+           ((x - putrange(ra_sat[-1], 360)) < 180) ):
         ra_sat.append(numpy.nan)
         dec_sat.append(numpy.nan)
         time_sat.append(compute_time)
-        long_sat.append(satellite.sublong * ephem_utils.DEG_IN_RADIAN)
-        lat_sat.append(satellite.sublat * ephem_utils.DEG_IN_RADIAN)
+        long_sat.append(satellite.sublong * 180.0 / math.pi)
+        lat_sat.append(satellite.sublat * 180.0 / math.pi)
       if ( (x < 180 + RA0) and
-           (ephem_utils.putrange(ra_sat[-1], 360) > (180 + RA0)) and
-           ((ephem_utils.putrange(ra_sat[-1], 360) - x) < 180) ):
+           (putrange(ra_sat[-1], 360) > (180 + RA0)) and
+           ((putrange(ra_sat[-1], 360) - x) < 180) ):
         ra_sat.append(numpy.nan)
         dec_sat.append(numpy.nan)
         time_sat.append(compute_time)
-        long_sat.append(satellite.sublong * ephem_utils.DEG_IN_RADIAN)
-        lat_sat.append(satellite.sublat * ephem_utils.DEG_IN_RADIAN)
+        long_sat.append(satellite.sublong * 180.0 / math.pi)
+        lat_sat.append(satellite.sublat * 180.0 / math.pi)
     ra_sat.append(x)
     dec_sat.append(y)
-    long_sat.append(satellite.sublong * ephem_utils.DEG_IN_RADIAN)
-    lat_sat.append(satellite.sublat * ephem_utils.DEG_IN_RADIAN)
+    long_sat.append(satellite.sublong * 180.0 / math.pi)
+    lat_sat.append(satellite.sublat * 180.0 / math.pi)
     if ra_sat[-1] > 180 + RA0:
       ra_sat[-1] -= 360
     if ra_sat[-1] < -180 + RA0:
@@ -743,28 +722,19 @@ def get_skytemp(datetimestring, delays, frequency, alpha=-2.6, verbose=True):
   except ValueError:
     logger.error('Could not parse datetimestring %s\n' % datetimestring)
     return None
-  UT = hour + minute / 60.0 + second / 3600.0
+  # UT = hour + minute / 60.0 + second / 3600.0
   UTs = '%02d:%02d:%02d' % (hour, minute, second)
-  mwa = ephem_utils.Obs[ephem_utils.obscode['MWA']]
-
-  # determine the LST
-  observer = ephem.Observer()
-  # make sure no refraction is included
-  observer.pressure = 0
-  observer.long = mwa.long / ephem_utils.DEG_IN_RADIAN
-  observer.lat = mwa.lat / ephem_utils.DEG_IN_RADIAN
-  observer.elevation = mwa.elev
-  observer.date = '%d/%d/%d %s' % (yr, mn, dy, UTs)
-  LST_hours = observer.sidereal_time() * ephem_utils.HRS_IN_RADIAN
-  LST = ephem_utils.dec2sexstring(LST_hours, digits=0, roundseconds=1)
+  obstime = Time('%d-%d-%d %s' % (yr, mn, dy, UTs), scale='utc')
+  obstime.delta_ut1_utc = 0
   if (verbose):
-    print "For %02d-%02d-%02d %s UT, LST=%s" % (yr, mn, dy, UTs, LST)
+    print "For %02d-%02d-%02d %s UT, LST=%6.3f" % (yr, mn, dy, UTs, obstime.sidereal_time(kind='mean').hour)
 
-  # use LST to get Az,Alt grid for image
   RA, Dec = numpy.meshgrid(ra * 15, dec)
-  # HA=RA-LST_hours*15
-  HA = -RA + LST_hours * 15
-  Az, Alt = ephem_utils.eq2horz(HA, Dec, mwa.lat)
+  coords = SkyCoord(ra=RA, dec=Dec, equinox='J2000', unit=(astropy.units.deg, astropy.units.deg))
+  coords.location = config.MWAPOS
+  coords.obstime = obstime
+  coords_prec = coords.transform_to('altaz')
+  Az, Alt = coords_prec.az.deg, coords_prec.alt.deg
 
   if (verbose):
     print "Creating primary beam response for frequency %.2f MHz..." % (frequency)

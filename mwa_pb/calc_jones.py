@@ -376,7 +376,7 @@ def calc_ratio(dec, target_freq_Hz, gridpoint):
 
   #  Average Embeded Element model:
   print "size(delays) = %d" % np.size(delays)
-  Jones_AEE = primary_beam.MWA_Tile_advanced(za_rad, az_rad, target_freq_Hz, delays=delays, zenithnorm=True, jones=True)
+  Jones_AEE = primary_beam.MWA_Tile_advanced(za_rad, az_rad, target_freq_Hz, delays=delays, jones=True)
   #   Jones_AEE=primary_beam.MWA_Tile_advanced( np.array([[0]]), np.array([[0]]), target_freq_Hz,delays=delays, zenithnorm=True, jones=True)
   Jones_AEE_swap = np.swapaxes(np.swapaxes(Jones_AEE, 0, 2), 1, 3)
   Jones_AEE_2D = Jones_AEE_swap[:, :, 0, 0]
@@ -496,7 +496,7 @@ def calc_jones(az, za, target_freq_Hz=205e6):
 
   # Average Embeded Element model:
   print "size(delays) = %d" % np.size(delays)
-  Jones_AEE = primary_beam.MWA_Tile_advanced(za_rad, az_rad, target_freq_Hz, delays=delays, zenithnorm=True, jones=True)
+  Jones_AEE = primary_beam.MWA_Tile_advanced(za_rad, az_rad, target_freq_Hz, delays=delays, jones=True)
   #   Jones_AEE=primary_beam.MWA_Tile_advanced( np.array([[0]]), np.array([[0]]), target_freq_Hz,delays=delays, zenithnorm=True, jones=True)
   Jones_AEE_swap = np.swapaxes(np.swapaxes(Jones_AEE, 0, 2), 1, 3)
   Jones_AEE_2D = Jones_AEE_swap[:, :, 0, 0]
