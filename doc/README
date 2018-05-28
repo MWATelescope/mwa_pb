@@ -1,0 +1,63 @@
+- Test / examples see :
+   Test data : wsclean_1067806072-0002-XX-dirty.fits wsclean_1067806072-0002-YY-dirty.fits  wsclean_1067806072-0002-XY-dirty.fits wsclean_1067806072-0002-XYi-dirty.fits
+   provided in mwa_pb/data/test/ and also template results : I.fits , Q.fits , U.fits and V.fits
+
+   # check 
+   python ./beam_correct_image.py --xx_file=wsclean_1067806072-0002-XX-dirty.fits --yy_file=wsclean_1067806072-0002-YY-dirty.fits --xy_file=wsclean_1067806072-0002-XY-dirty.fits --xyi_file=wsclean_1067806072-0002-XYi-dirty.fits -b 0,0,0,0,2,2,2,2,4,4,4,4,6,6,6,6 --model=2016
+   and compare 
+      ds9 -scale zscale I.fits &
+   vs. template :
+      ds9 -scale zscale mwa_pb/data/test/I.fits &
+   
+   Also try : diff I.fits mwa_pb/data/test/I.fits
+
+
+  
+
+- Other examples :
+
+   # generate XX and YY beams for a given image and set of delays
+      python make_beam_test.py -f wsclean_1067806072-0002-XX-dirty.fits -d 0,0,0,0,2,2,2,2,4,4,4,4,6,6,6,6 -v --model=2016
+      python make_beam_test.py -f wsclean_1067806072-0002-XX-dirty.fits -g 11 -v --model=2016
+      python make_beam_test.py -f 2456603.366393_img_200.335MHz_chan000of032_cal001_peel_000_000_t0000XX.fits -g 11 -v --model=2016  --obsid=1067806072 --freq_mhz=203.52
+      python make_beam_test.py -f 2456603.366393_img_200.335MHz_chan000of032_cal001_peel_000_000_t0000XX.fits  -d 0,0,0,0,2,2,2,2,4,4,4,4,6,6,6,6 -v --model=2016  --obsid=1067806072  --freq_mhz=203.51 
+
+      Using delays from metafits (option --obsid is not required if obsid can be obtained as the first 10 digits of metafits filename) :
+        python make_beam_test.py -f 2456603.366393_img_200.335MHz_chan000of032_cal001_peel_000_000_t0000XX.fits --model=2016 --freq_mhz=203.51 -m 1067806072.metafits
+
+   # with delays passed by parameter : -b 0,0,0,0,2,2,2,2,4,4,4,4,6,6,6,6
+      python ./beam_correct_image.py --xx_file=wsclean_1067806072-0002-XX-dirty.fits --yy_file=wsclean_1067806072-0002-YY-dirty.fits --xy_file=wsclean_1067806072-0002-XY-dirty.fits --xyi_file=wsclean_1067806072-0002-XYi-dirty.fits -b 0,0,0,0,2,2,2,2,4,4,4,4,6,6,6,6 --model=2016
+
+   # with delays taken from gridpoint = 11 : -g 11
+      python ./beam_correct_image.py --xx_file=wsclean_1067806072-0002-XX-dirty.fits --yy_file=wsclean_1067806072-0002-YY-dirty.fits --xy_file=wsclean_1067806072-0002-XY-dirty.fits --xyi_file=wsclean_1067806072-0002-XYi-dirty.fits -g 11 --model=2016
+
+   # beam correction using new FEE (2016) model :
+      python ./beam_correct_image.py --xx_file=wsclean_1067806072-0002-XX-dirty.fits --yy_file=wsclean_1067806072-0002-YY-dirty.fits --xy_file=wsclean_1067806072-0002-XY-dirty.fits --xyi_file=wsclean_1067806072-0002-XYi-dirty.fits
+
+
+   # beam correction using Analytic model :
+      python ./beam_correct_image.py --xx_file=wsclean_1067806072-0002-XX-dirty.fits --yy_file=wsclean_1067806072-0002-YY-dirty.fits --xy_file=wsclean_1067806072-0002-XY-dirty.fits --xyi_file=wsclean_1067806072-0002-XYi-dirty.fits --model=analytic
+
+   # Sensitivity calculation using FEE (2016) model :
+      python ./mwa_sensitivity.py -b 0,0,0,0,2,2,2,2,4,4,4,4,6,6,6,6 -c 169 -p all  -m full_EE 
+
+      for zenith gridpoint (0) , frequency 185.6 MHz :
+      python ./mwa_sensitivity.py -f 185.6 --model 2016 --pointing_za_deg 5 --pointing_az_deg 0 --antnum=60 --inttime=120 -p all --gridpoint=0 -g 1193567480
+
+
+
+
+- Files needed for beam model:
+    2016 beam model : 
+       mwa_full_embedded_element_pattern.h5
+    2015 beam model : 
+       Jmatrix.fits
+       ZMatrix.fits
+
+- Files needed for sensitivity calculation:
+   radio408.RaDec.fits
+
+
+- Noramlly they can be found in mwa_pb/data/ and to get 2016 model large H5 file 
+   wget http://cerberus.mwa128t.org/mwa_full_embedded_element_pattern.h5
+

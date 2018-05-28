@@ -74,11 +74,38 @@ def main():
                     dest="verbose",
                     default=False,
                     help="Increase verbosity of output")
+    parser.add_option('-g','--gridpoint',dest="gridpoint",default=-1, help="MWA gridpoint where the data was collected [default %default]",type="int")
+    parser.add_option('-o','--obsid',dest="obsid",default=-1, help="Coma separated list of observations IDs",type="int")
+    parser.add_option('--freq_cc',dest="freq_cc",default=0, help="Coma separated list of coarse channels",type="int")
+    parser.add_option('--freq_mhz',dest="freq_mhz",default=0, help="Coma separated list of coarse channels",type="float")
+
+    # just to keep backword compatibility :
+    parser.add_option('--analytic',action="store_true",dest="analytic_model",default=False, help="Use the old analytic dipole model, instead of the default Sutinjo 2014 model.")
+    parser.add_option('--full_EE',action="store_true",dest="full_EE_model",default=False, help="Use the new full embedded element model (V02), instead of the default Sutinjo 2014 model.")
+
+
 
   (options, args) = parser.parse_args()
 
   if (options.verbose):
     logger.setLevel(logging.INFO)
+
+    if options.full_EE_model :
+       options.model = '2016'
+    if options.analytic_model :
+       options.model = '2014'
+
+  print "###########################################"
+  print "PARAMETERS:"
+  print "###########################################"
+  print "Filename = %s" % options.filename
+  print "obsid    = %d" % options.obsid
+  print "model    = %s" % options.model
+  print "###########################################"
+
+  if options.model not in ['analytic','advanced','full_EE', 'full_EE_AAVS05','FEE','Full_EE','2016','2015','2014']:
+    logger.error("Model %s not found\n" % model)
+    sys.exit(1)
 
   try:
     extnum = int(options.ext)
@@ -115,6 +142,28 @@ def main():
     logger.error('Must supply a filename')
     sys.exit(1)
 
+  if options.obsid is None or options.obsid <= 0:
+    logger.warning("ObsID not provided !")
+    if options.metafits is not None:
+        logger.warning("Will try to use first 10 digits of the metafits file name %s" % options.metafits)
+        obsid_str = options.metafits[0:10]
+        if int(obsid_str) > 0:
+            options.obsid = int(obsid_str)
+            logger.warning("Obsid from metafits file %s is %d" % (options.metafits, options.obsid))
+        else:
+            logger.error("Could not obtain obsID from metafits file name %s -> cannot continue" % options.metafits)
+            sys.exit(1)
+
+  delays = options.delays
+  # find delays by gridpoint if given as parameter:
+  if options.gridpoint >= 0:
+    print
+    "Getting delays for gridpoint = %d" % (options.gridpoint)
+    delays_xy = mwa_sweet_spots.get_delays(options.gridpoint)
+    delays = delays_xy[0]
+    print
+    "Delays for gridpoint = %d are : %s" % (options.gridpoint, delays)
+
   if delays is None:
     logger.error("Must provide delays, or a metafits file.")
     sys.exit(1)
@@ -128,7 +177,9 @@ def main():
 
   out = make_beam.make_beam(options.filename, ext=ext, delays=delays,
                             jones=options.jones,
-                            model=options.model)
+                            model=options.model
+                            gps = options.obsid,
+                            freq_mhz = options.freq_mhz)
 
   if out is None:
     logger.error('Problem creating primary beams')

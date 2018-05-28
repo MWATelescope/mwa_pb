@@ -60,6 +60,10 @@ def trcv_from_skymodel_with_err(freq_mhz):
   if trcv < 50 or freq_mhz > 160:
     trcv = 50
 
+  # /home/msok/Desktop/EDA/loogbook/paper/T_rcv/eda_paper_lightcurve_and_trcv_FINAL_MORE_POINTS.odt
+  if freq_mhz > 200 :
+     trcv = 80
+
   return trcv
 
 

@@ -25,12 +25,13 @@ logger = logging.getLogger(__name__)
 
 
 ######################################################################
-def make_beam(filename, ext=0, delays=None,
-              model='2016',
-              jones=False,
-              interp=True,
+def make_beam(filename, ext=0, delays=None, jones=False,
               dipheight=config.DIPOLE_HEIGHT,
-              dip_sep=config.DIPOLE_SEPARATION):
+              dip_sep=config.DIPOLE_SEPARATION
+              model='2016',
+              freq_mhz = 0,
+              gps = 0,
+              interp=True):
   """
      outputfiles=make_beam(filename, ext=0, delays=None, analytic_model=False,jones=False
      dipheight=primary_beam._DIPOLE_HEIGHT,
@@ -38,7 +39,7 @@ def make_beam(filename, ext=0, delays=None,
   """
 
   try:
-    assert model in ['analytic', '2014', '2016']
+    assert model in ['analytic', '2013', ''2014', '2016']
   except AssertionError:
     logging.error('Model %s is not supported' % model)
     return None
@@ -81,6 +82,8 @@ def make_beam(filename, ext=0, delays=None,
     return None
 
   freqfirst = True
+  nfreq=1
+  df=0
   # try  order  RA,Dec,Freq,Stokes
   if 'RA' not in h['CTYPE1']:
     logger.error('Coordinate 1 should be RA')
@@ -88,19 +91,21 @@ def make_beam(filename, ext=0, delays=None,
   if 'DEC' not in h['CTYPE2']:
     logger.error('Coordinate 1 should be DEC')
     return None
-  if 'FREQ' not in h['CTYPE3']:
-    freqfirst = False
-    if 'FREQ' not in h['CTYPE4']:
-      logger.error('Coordinate 3 or 4 should be FREQ')
-      return None
-  if freqfirst:
-    logger.debug('axis 3 is FREQ, axis 4 is STOKES')
-    nfreq = h['NAXIS3']  # read number of frequency channels
-    df = h['CDELT3']  # read frequency increment
-  else:
-    logger.debug('axis 3 is STOKES, axis 4 is FREQ')
-    nfreq = h['NAXIS4']
-    df = h['CDELT4']
+  if naxes >= 4:
+     if 'FREQ' not in h['CTYPE3']:
+       freqfirst = False
+       if 'FREQ' not in h['CTYPE4']:
+         logger.error('Coordinate 3 or 4 should be FREQ')
+         return None
+     if freqfirst:
+       logger.debug('axis 3 is FREQ, axis 4 is STOKES')
+       nfreq = h['NAXIS3']  # read number of frequency channels
+       df = h['CDELT3']  # read frequency increment
+     else:
+       logger.debug('axis 3 is STOKES, axis 4 is FREQ')
+       nfreq = h['NAXIS4']
+       df = h['CDELT4']
+
   logger.info('Number of frequency channels = ' + str(nfreq))
   # construct the basic arrays
   x = numpy.arange(1, h['NAXIS1'] + 1)
@@ -114,9 +119,12 @@ def make_beam(filename, ext=0, delays=None,
   Xflat = X.flatten()
   Yflat = Y.flatten()
   FF = ff * numpy.ones(Xflat.shape)
-  Tostack = [Xflat, Yflat, FF]
-  for i in xrange(3, naxes):
-    Tostack.append(numpy.ones(Xflat.shape))
+  if naxes >= 4:
+     Tostack = [Xflat, Yflat, FF]
+     for i in xrange(3, naxes):
+       Tostack.append(numpy.ones(Xflat.shape))
+  else :
+     Tostack = [Xflat, Yflat]
   pixcrd = numpy.vstack(Tostack).transpose()
 
   try:
@@ -131,11 +139,16 @@ def make_beam(filename, ext=0, delays=None,
   # extract the important pieces
   ra = sky[:, 0]
   dec = sky[:, 1]
-  if freqfirst:
-    freq = sky[:, 2]
-  else:
-    freq = sky[:, 3]
-  freq = freq[numpy.isfinite(freq)][0]
+  if naxes>=4 :
+     if freqfirst:
+       freq = sky[:, 2]
+     else:
+       freq = sky[:, 3]
+     freq = freq[numpy.isfinite(freq)][0]
+  else :
+     freq = freq_mhz * 1000000
+     print "Frequency set to %.2f Hz" % freq
+
   if nfreq > 1:
     frequencies = numpy.arange(nfreq) * df + freq
   else:
@@ -148,9 +161,15 @@ def make_beam(filename, ext=0, delays=None,
   # get the date so we can convert to Az,El
   try:
     d = h['DATE-OBS']
-  except KeyError:
+  except:
     logger.error('Unable to read observation date DATE-OBS from %s' % filename)
-    return None
+    if gps > 0:
+      time = Time(gps, format='gps', scale='utc')
+      d = time.fits
+      print "gps=%d -> d=%s" % (gps, d)
+    else:
+      logger.error('GPS time not provided either -> cannot continue')
+      return None
 
   if '.' in d:
     d = d.split('.')[0]
@@ -232,13 +251,18 @@ def make_beam(filename, ext=0, delays=None,
     # which in full_Stokes_beam_correct_auto.py and generate_beam.py
     # is implemented in function get_azza_from_fits
     # (see return statement there)
-    if not jones:
-      if freqfirst:
-        f[ext].data[0, freqindex] = rX.transpose()
-        tempY[0, freqindex] = rY.transpose()
-      else:
-        f[ext].data[freqindex, 0] = rX.transpose()
-        tempY[freqindex, 0] = rY.transpose()
+    if naxes >= 4:
+       if not jones:
+          if freqfirst:
+            f[ext].data[0, freqindex] = rX.transpose()
+            tempY[0, freqindex] = rY.transpose()
+          else:
+            f[ext].data[freqindex, 0] = rX.transpose()
+            tempY[freqindex, 0] = rY.transpose()
+    else:
+       f[ext].data = rX.transpose()
+       tempY = rY.transpose()
+
 
   if 'python_version' in platform.__dict__:
     pyver = platform.python_version()
@@ -318,14 +342,17 @@ def make_beam(filename, ext=0, delays=None,
   f[ext].writeto(outname)
   logger.info('XX beam written to %s' % outname)
 
-  if freqfirst:
-    f[ext].data[0, :] = tempY[0, :]
-  else:
-    f[ext].data[:, 0] = tempY[:, 0]
-  if freqfirst:
-    f[ext].header['CRVAL4'] = -6.0
-  else:
-    f[ext].header['CRVAL3'] = -6.0
+  if naxes >= 4 :
+     if freqfirst:
+        f[ext].data[0, :] = tempY[0, :]
+     else:
+        f[ext].data[:, 0] = tempY[:, 0]
+     if freqfirst:
+        f[ext].header['CRVAL4'] = -6.0
+     else:
+        f[ext].header['CRVAL3'] = -6.0
+  else :
+     f[ext].data = tempY
   outname = root + '_beamYY' + '.fits'
   if os.path.exists(outname):
     os.remove(outname)

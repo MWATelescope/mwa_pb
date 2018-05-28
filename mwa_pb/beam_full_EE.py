@@ -78,7 +78,7 @@ class ApertureArray(object):
     """
     logger.info('New model of the physical tile, modelled using full embedded element patterns with the beam described by spherical harmonics.')
     logger.info('This new beam model is still being tested and is not an official release')
-    logger.info('Code version date: 2016-02-15')
+    logger.info('Code version date: 2017-07-20 (Sigma_P sign flipped standalone version)')
 
     # load h5file
     if not os.path.exists(h5filepath):
@@ -125,7 +125,7 @@ class ApertureArray(object):
     max_phis = [[math.pi / 2, math.pi], [0, math.pi / 2]]  # phi where each Jones vector is max
     for i in [0, 1]:
       for ii in [0, 1]:
-        self.norm_fac[i][ii] = mybeam.get_response(max_phis[i][ii], 0)[i][ii][0]
+        self.norm_fac[i][ii] = abs( mybeam.get_response(max_phis[i][ii], 0)[i][ii][0] ) # or with abs
 
     # print "----------------------------------------------------------------"
     # print "Normalisation Jones matrix :"
@@ -589,7 +589,8 @@ class Beam(object):
 
       # Save for this polarisation
       Jones[pol, 0] = Sigma_T
-      Jones[pol, 1] = Sigma_P
+      Jones[pol, 1] = -Sigma_P # 2017-05-30 : sign fixed by MS to reflect the fact that phi=90-az (it is not just change of values but orientation of base vector changes,
+                               # hence the sign of the Phi component of electric field has to change too. It was also fixed 
 
     return Jones
 
