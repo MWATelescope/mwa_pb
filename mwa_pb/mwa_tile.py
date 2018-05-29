@@ -66,7 +66,7 @@ class Dipole(object):
     self.i00_imag, self.i01_imag, self.i10_imag, self.i11_imag = (None, None, None, None)
     self.j00norm, self.j01norm, self.j10norm, self.j11norm = (None, None, None, None)
     self.freqs = numpy.array([])
-    if type == 'lookup':
+    if atype == 'lookup':
       self.loadLookup(lookup_filename)
 
   def loadLookup(self, lookup_filename):

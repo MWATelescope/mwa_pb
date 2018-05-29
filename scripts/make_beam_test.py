@@ -11,6 +11,8 @@
     # INFO:make_beam: YY beam written to P00_w_beamYY.fits
 
 """
+# degub :
+import pdb
 
 import logging
 from optparse import OptionParser
@@ -102,6 +104,7 @@ def main():
   print "obsid    = %d" % options.obsid
   print "model    = %s" % options.model
   print "metafits = %s" % options.metafits
+  print "delays   = %s" % options.delays
   print "###########################################"
 
   if options.model not in ['analytic','advanced','full_EE', 'full_EE_AAVS05','FEE','Full_EE','2016','2015','2014']:
@@ -133,7 +136,6 @@ def main():
       logger.error('Cannot find DELAYS in %s' % options.metafits)
       sys.exit(1)
     delays = f[0].header['DELAYS']
-    print "here ??? delays = %s" % (delays)
     try:
       delays = [int(x) for x in delays.split(',')]
     except Exception, e:
