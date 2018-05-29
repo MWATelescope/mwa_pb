@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 ######################################################################
 def make_beam(filename, ext=0, delays=None, jones=False,
               dipheight=config.DIPOLE_HEIGHT,
-              dip_sep=config.DIPOLE_SEPARATION
+              dip_sep=config.DIPOLE_SEPARATION,
               model='2016',
               freq_mhz = 0,
               gps = 0,
@@ -39,7 +39,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
   """
 
   try:
-    assert model in ['analytic', '2013', ''2014', '2016']
+    assert model in ['analytic', '2013', '2014', '2016']
   except AssertionError:
     logging.error('Model %s is not supported' % model)
     return None

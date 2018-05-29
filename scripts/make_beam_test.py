@@ -74,14 +74,14 @@ def main():
                     dest="verbose",
                     default=False,
                     help="Increase verbosity of output")
-    parser.add_option('-g','--gridpoint',dest="gridpoint",default=-1, help="MWA gridpoint where the data was collected [default %default]",type="int")
-    parser.add_option('-o','--obsid',dest="obsid",default=-1, help="Coma separated list of observations IDs",type="int")
-    parser.add_option('--freq_cc',dest="freq_cc",default=0, help="Coma separated list of coarse channels",type="int")
-    parser.add_option('--freq_mhz',dest="freq_mhz",default=0, help="Coma separated list of coarse channels",type="float")
+  parser.add_option('-g','--gridpoint',dest="gridpoint",default=-1, help="MWA gridpoint where the data was collected [default %default]",type="int")
+  parser.add_option('-o','--obsid',dest="obsid",default=-1, help="Coma separated list of observations IDs",type="int")
+  parser.add_option('--freq_cc',dest="freq_cc",default=0, help="Coma separated list of coarse channels",type="int")
+  parser.add_option('--freq_mhz',dest="freq_mhz",default=0, help="Coma separated list of coarse channels",type="float")
 
-    # just to keep backword compatibility :
-    parser.add_option('--analytic',action="store_true",dest="analytic_model",default=False, help="Use the old analytic dipole model, instead of the default Sutinjo 2014 model.")
-    parser.add_option('--full_EE',action="store_true",dest="full_EE_model",default=False, help="Use the new full embedded element model (V02), instead of the default Sutinjo 2014 model.")
+  # just to keep backword compatibility :
+  parser.add_option('--analytic',action="store_true",dest="analytic_model",default=False, help="Use the old analytic dipole model, instead of the default Sutinjo 2014 model.")
+  parser.add_option('--full_EE',action="store_true",dest="full_EE_model",default=False, help="Use the new full embedded element model (V02), instead of the default Sutinjo 2014 model.")
 
 
 
@@ -101,6 +101,7 @@ def main():
   print "Filename = %s" % options.filename
   print "obsid    = %d" % options.obsid
   print "model    = %s" % options.model
+  print "metafits = %s" % options.metafits
   print "###########################################"
 
   if options.model not in ['analytic','advanced','full_EE', 'full_EE_AAVS05','FEE','Full_EE','2016','2015','2014']:
@@ -132,6 +133,7 @@ def main():
       logger.error('Cannot find DELAYS in %s' % options.metafits)
       sys.exit(1)
     delays = f[0].header['DELAYS']
+    print "here ??? delays = %s" % (delays)
     try:
       delays = [int(x) for x in delays.split(',')]
     except Exception, e:
@@ -154,7 +156,8 @@ def main():
             logger.error("Could not obtain obsID from metafits file name %s -> cannot continue" % options.metafits)
             sys.exit(1)
 
-  delays = options.delays
+  if options.delays is not None :
+     delays = options.delays
   # find delays by gridpoint if given as parameter:
   if options.gridpoint >= 0:
     print
@@ -177,7 +180,7 @@ def main():
 
   out = make_beam.make_beam(options.filename, ext=ext, delays=delays,
                             jones=options.jones,
-                            model=options.model
+                            model=options.model,
                             gps = options.obsid,
                             freq_mhz = options.freq_mhz)
 
