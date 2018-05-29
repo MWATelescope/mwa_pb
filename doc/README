@@ -1,20 +1,23 @@
 - Test / examples see :
-   Test data : wsclean_1067806072-0002-XX-dirty.fits wsclean_1067806072-0002-YY-dirty.fits  wsclean_1067806072-0002-XY-dirty.fits wsclean_1067806072-0002-XYi-dirty.fits
-   provided in mwa_pb/data/test/ and also template results : I.fits , Q.fits , U.fits and V.fits
 
-   # check 
-   python ./beam_correct_image.py --xx_file=wsclean_1067806072-0002-XX-dirty.fits --yy_file=wsclean_1067806072-0002-YY-dirty.fits --xy_file=wsclean_1067806072-0002-XY-dirty.fits --xyi_file=wsclean_1067806072-0002-XYi-dirty.fits -b 0,0,0,0,2,2,2,2,4,4,4,4,6,6,6,6 --model=2016
-   and compare 
+ - Test case - to verify if the beam_correct_image.py script works correctly and gives correct results
+    - Test data is located in data/test/ : wsclean_1067806072-0002-XX-dirty.fits wsclean_1067806072-0002-YY-dirty.fits  wsclean_1067806072-0002-XY-dirty.fits wsclean_1067806072-0002-XYi-dirty.fits
+      and also template results are provided in data/test/ : I.fits , Q.fits , U.fits and V.fits
+
+   - test of beam_correct_image.py script :
+      python ./beam_correct_image.py --xx_file=wsclean_1067806072-0002-XX-dirty.fits --yy_file=wsclean_1067806072-0002-YY-dirty.fits --xy_file=wsclean_1067806072-0002-XY-dirty.fits --xyi_file=wsclean_1067806072-0002-XYi-dirty.fits -b 0,0,0,0,2,2,2,2,4,4,4,4,6,6,6,6 --model=2016
+  
+   - Comparison with template results ( files in data/test/ : I.fits , Q.fits , U.fits and V.fits )
       ds9 -scale zscale I.fits &
    vs. template :
       ds9 -scale zscale mwa_pb/data/test/I.fits &
    
-   Also try : diff I.fits mwa_pb/data/test/I.fits
+   If images seem to look the same in ds9 just try binary diff as the images should actually be identical (at least until header file changes) : diff I.fits mwa_pb/data/test/I.fits
 
 
   
 
-- Other examples :
+- Other usage examples :
 
    # generate XX and YY beams for a given image and set of delays
       python make_beam_test.py -f wsclean_1067806072-0002-XX-dirty.fits -d 0,0,0,0,2,2,2,2,4,4,4,4,6,6,6,6 -v --model=2016
