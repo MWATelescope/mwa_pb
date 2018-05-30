@@ -53,7 +53,7 @@ class Dipole(object):
       for the X (upper) and Y (lower) dipole resectively
     """
 
-    assert (atype == 'short' or atype == 'long' or atype == 'lookup'), 'Unknown type %r' % atype
+    assert (atype == 'short' or atype == 'long' or atype == 'lookup'), 'Unknown atype %r' % atype
     self.atype = atype
     self.height = height
     self.length = length
@@ -120,7 +120,7 @@ class Dipole(object):
     elif self.atype == 'lookup':
       return self.getJonesLookup(az, za, freq)
     else:
-      raise Exception("Dipole type %r is not implemented yet." % self.atype)
+      raise Exception("Dipole atype %r is not implemented yet." % self.atype)
 
   def getJonesLookup(self, az, za, freq):
     """Return the Jones matrix for arrays of az/za for a given freq (Hz)
@@ -470,7 +470,7 @@ def plotDipoleJones(d, freq=155e6):
 
   import matplotlib.pyplot as plt
   (az, za) = makeAZZA()
-  logger.info("plotting dipole Jones response for type: " + d.atype + ', freq (MHz): ' + str(freq / 1e6))
+  logger.info("plotting dipole Jones response for atype: " + d.atype + ', freq (MHz): ' + str(freq / 1e6))
   j = d.getJones(az, za, freq)
 
   plt.imshow(j[:, :, 0, 0].real)

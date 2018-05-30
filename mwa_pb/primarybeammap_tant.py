@@ -264,7 +264,7 @@ def get_Haslam(freq, scaling=-2.55):
   try:
     logger.info("Loading 408 MHz map from %s..." % radio_image_touse)
     f = pyfits.open(radio_image_touse)
-  except:
+  except Exception:
     logger.error("Error opening 408 MHz image: %s\n" % (radio_image_touse))
     return None
 
