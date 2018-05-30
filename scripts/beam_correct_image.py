@@ -32,7 +32,7 @@ logger.setLevel(logging.DEBUG)
 ######################################################################
 def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0, gps=0):
     """
-  Get frequency & az & ZA arrays from fits file
+    Get frequency & az & ZA arrays from fits file
     """
     logger.info('Time (start): %s' % datetime.datetime.now().time())
 
@@ -93,7 +93,6 @@ def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0, gps=0):
     # assume we want the first frequency
     # if we have a cube this will have to change
     ff = 1
-    # X,Y=np.meshgrid(x,y)
     Y, X = np.meshgrid(y, x)
 
     Xflat = X.flatten()
@@ -165,10 +164,10 @@ def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0, gps=0):
     source.obstime = mwatime
 
     source_altaz = source.transform_to('altaz')
-    Az, Alt = source_altaz.alt.deg, source_altaz.az.deg      # Transform to Topocentric Alt/Az at the current epoch
+    Az, Alt = source_altaz.alt.deg, source_altaz.az.deg  # Transform to Topocentric Alt/Az at the current epoch
 
     if precess:
-        source_now = source.transform_to(FK5(equinox=mwatime))   # Transform to FK5 coordinates at the current epoch
+        source_now = source.transform_to(FK5(equinox=mwatime))  # Transform to FK5 coordinates at the current epoch
         RAnow, Decnow = source_now.ra.deg, source_now.dec.deg
     else:
         RAnow, Decnow = RA, Dec
@@ -185,8 +184,11 @@ def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0, gps=0):
     # Also makes images look correct, otherwise there were "leakage-sources" on the right (east) of the beam-corrected image !
     #    return {'za_rad':theta,'astro_az_rad':phi,'frequencies':frequencies,'ra_now':RAnow,'dec_now':Decnow}
     #     return {'za_rad':theta,'astro_az_rad':phi,'frequencies':frequencies}
-    return {'za_rad': theta.transpose(), 'astro_az_rad': phi.transpose(), 'frequencies': frequencies,
-            'ra_now': RAnow.transpose(), 'dec_now': Decnow.transpose()}
+    return {'za_rad': theta.transpose(),
+            'astro_az_rad': phi.transpose(),
+            'frequencies': frequencies,
+            'ra_now': RAnow.transpose(),
+            'dec_now': Decnow.transpose()}
 
 
 def get_IQUV(filename):
@@ -264,12 +266,10 @@ def Dij_beam_correct(j, Dij, centre=None):
 
         # Get jones at location of calibrator source
         my_j = j[:, :, centre[0], centre[1]]
-        logger.debug('My Jones correction:\n[%s %s]\n[%s %s]'
-                     % (my_j[0, 0], my_j[0, 1], my_j[1, 0], my_j[1, 1]))
+        logger.debug('My Jones correction:\n[%s %s]\n[%s %s]' % (my_j[0, 0], my_j[0, 1], my_j[1, 0], my_j[1, 1]))
 
         temp = beam_tools.makeUnpolInstrumentalResponse(my_j, my_j)
-        logger.debug('My Jones correction:\n[XX:%s XY:%s]\n[YX:%s YY:%s]'
-                     % (temp[0, 0], temp[0, 1], temp[1, 0], temp[1, 1]))
+        logger.debug('My Jones correction:\n[XX:%s XY:%s]\n[YX:%s YY:%s]' % (temp[0, 0], temp[0, 1], temp[1, 0], temp[1, 1]))
 
         out = Dij * 0  # Copy complex array
 
@@ -345,7 +345,7 @@ def estimateSkyBrightnessMatrix(j1, j2, Vij):
             # Matrix muliply every 2x2 array in the 2-D sky
             if i % 1000 == 0:
                 logger.debug('Processing %s of %s...' % (i, my_shape[2]))
-            #                print 'Processing  %s of %s...'%(i,my_shape[2])
+                # print 'Processing  %s of %s...'%(i,my_shape[2])
             for j in range(my_shape[3]):
                 # J1^-1 (Vij (J2^H)^-1)
                 b[:, :, i, j] = np.dot(j1inv[:, :, i, j], np.dot(Vij[:, :, i, j], j2Hinv[:, :, i, j]))
@@ -443,28 +443,74 @@ def parse_options():
     usage = "Usage: %prog [options]\n"
     usage += '\tMeasure Stokes leakage in beam-corrected images\n'
     parser = OptionParser(usage=usage, version=1.00)
-    parser.add_option('-o', '--obsid', dest="obsid", default=-1, help="Coma separated list of observations IDs",
+    parser.add_option('-o', '--obsid',
+                      dest="obsid",
+                      default=-1,
+                      help="Coma separated list of observations IDs",
                       type="int")
-    parser.add_option('-f', '--freq_mhz', '--freq', '--freqs', dest="freq_mhz", default=0,
-                      help="Coma separated list of coarse channels", type="float")
-    parser.add_option('-d', '--debug', dest="debug", default="1", help="Debug", metavar="STRING", type="int")
-    parser.add_option('-m', '--model', dest="model", default="full_EE", help="Model to use", metavar="STRING")
-    parser.add_option('--metafits', dest='metafits', default=None,
+    parser.add_option('-f', '--freq_mhz', '--freq', '--freqs',
+                      dest="freq_mhz",
+                      default=0,
+                      help="Coma separated list of coarse channels",
+                      type="float")
+    parser.add_option('-d', '--debug',
+                      dest="debug",
+                      default="1",
+                      help="Debug",
+                      metavar="STRING",
+                      type="int")
+    parser.add_option('-m', '--model',
+                      dest="model",
+                      default="full_EE",
+                      help="Model to use",
+                      metavar="STRING")
+    parser.add_option('--metafits',
+                      dest='metafits',
+                      default=None,
                       help="FITS file to get delays from (can be metafits)")
-    parser.add_option('--xx_file', dest='xx_file', default=None, help="Force xx_file")
-    parser.add_option('--yy_file', dest='yy_file', default=None, help="Force yy_file")
-    parser.add_option('--xy_file', dest='xy_file', default=None, help="Force xy_file")
-    parser.add_option('--xyi_file', dest='xyi_file', default=None, help="Force xyi_file")
-    parser.add_option('--out_basename', dest='out_basename', default=None, help="Output file basename")
-    parser.add_option('-g', '--gridpoint', dest="gridpoint", default=-1,
-                      help="MWA gridpoint where the data was collected [default %default]", type="int")
-    parser.add_option('-b', '--beamformer', "--delays", dest='delays', default=None,
+    parser.add_option('--xx_file',
+                      dest='xx_file',
+                      default=None,
+                      help="Force xx_file")
+    parser.add_option('--yy_file',
+                      dest='yy_file',
+                      default=None,
+                      help="Force yy_file")
+    parser.add_option('--xy_file',
+                      dest='xy_file',
+                      default=None,
+                      help="Force xy_file")
+    parser.add_option('--xyi_file',
+                      dest='xyi_file',
+                      default=None,
+                      help="Force xyi_file")
+    parser.add_option('--out_basename',
+                      dest='out_basename',
+                      default=None,
+                      help="Output file basename")
+    parser.add_option('-g', '--gridpoint',
+                      dest="gridpoint",
+                      default=-1,
+                      help="MWA gridpoint where the data was collected [default %default]",
+                      type="int")
+    parser.add_option('-b', '--beamformer', "--delays",
+                      dest='delays',
+                      default=None,
                       # default zenith pointing "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"
                       help='16 beamformer delays separated by commas')
-    parser.add_option('--h5file', dest='h5file', default="MWA_embedded_element_pattern_V02.h5", help="H5 file")
-    parser.add_option('--wsclean', action="store_true", dest="wsclean_image", default=True,
+    parser.add_option('--h5file',
+                      dest='h5file',
+                      default="MWA_embedded_element_pattern_V02.h5",
+                      help="H5 file")
+    parser.add_option('--wsclean',
+                      action="store_true",
+                      dest="wsclean_image",
+                      default=True,
                       help="Reorders final components to bring the signs back to IEEE or Thomson,Moran,Swanson (TMS) convention from WSCLEAN-MWA X=EW,Y=NS convention (non-standard)")
-    parser.add_option('-r', '--rts', action="store_true", dest="rts_image", default=False,
+    parser.add_option('-r', '--rts',
+                      action="store_true",
+                      dest="rts_image",
+                      default=False,
                       help="If it is RTS image -> XX needs to be swapped with YY in Vij")
 
     (options, args) = parser.parse_args()
@@ -526,8 +572,7 @@ if __name__ == "__main__":
         print "Getting delays for gridpoint = %d" % (gridpoint)
         delays = mwa_sweet_spots.get_delays(gridpoint)
 
-    if options.model not in ['analytic', 'advanced', 'full_EE', 'full_EE_AAVS05', 'FEE', 'Full_EE', '2016', '2015',
-                             '2014']:
+    if options.model not in ['analytic', 'advanced', 'full_EE', 'full_EE_AAVS05', 'FEE', 'Full_EE', '2016', '2015', '2014']:
         logger.error("Model %s not found\n" % options.model)
         sys.exit(1)
 
@@ -622,13 +667,13 @@ if __name__ == "__main__":
     za_original = np.copy(za)
     ra_now = beam_info['ra_now']
     dec_now = beam_info['dec_now']
-    #                            print "DEBUG : beam_info.shape = %d" % beam_info.shape()
+    # print "DEBUG : beam_info.shape = %d" % beam_info.shape()
 
     # visibilites constructed from instrumental polarisation images from WSCLEAN:
     Vij = np.array([[data_xx, data_xy + 1j * data_xyi], [data_xy - 1j * data_xyi, data_yy]])
     if options.rts_image:
         Vij = np.array([[data_yy, data_xy + 1j * data_xyi], [data_xy - 1j * data_xyi, data_xx]])
-    # delays=beam_tools.gridpoint2delays(gridpoint,os.path.join(MWAtools_pb_dir,'MWA_sweet_spot_gridpoints.csv'))
+    # delays = beam_tools.gridpoint2delays(gridpoint, os.path.join(MWAtools_pb_dir, 'MWA_sweet_spot_gridpoints.csv'))
 
     print "delays = %s , frequency = %.2f Hz" % (delays, target_freq_Hz)
 
@@ -636,22 +681,29 @@ if __name__ == "__main__":
     sign_q = 1
     if model == 'full_EE' or model == '2016' or model == 'FEE' or model == 'Full_EE':
         logger.info("Correcting with full_EE(%s) model at frequency %.2f Hz" % (model, target_freq_Hz))
-        Jones = primary_beam.MWA_Tile_full_EE(za, az, target_freq_Hz,
+        Jones = primary_beam.MWA_Tile_full_EE(za, az,
+                                              target_freq_Hz,
                                               delays=delays,
-                                              zenithnorm=options.zenithnorm, jones=True,
+                                              zenithnorm=options.zenithnorm,
+                                              jones=True,
                                               interp=True)
         if options.wsclean_image:
             sign_uv = -1
     elif model == 'avg_EE' or model == 'advanced' or model == '2015' or model == 'AEE':
         logger.info("Correcting with AEE(%s) model at frequency %.2f Hz" % (model, target_freq_Hz))
         # logging.getLogger("mwa_tile").setLevel(logging.DEBUG)
-        Jones = primary_beam.MWA_Tile_advanced(za, az, target_freq_Hz, delays=delays,
+        Jones = primary_beam.MWA_Tile_advanced(za, az,
+                                               target_freq_Hz,
+                                               delays=delays,
                                                jones=True)
         if options.wsclean_image:
             sign_uv = -1
     elif model == 'analytic' or model == '2014':
         logger.info("Correcting with analytic model")
-        Jones = primary_beam.MWA_Tile_analytic(za, az, target_freq_Hz, delays=delays, zenithnorm=options.zenithnorm,
+        Jones = primary_beam.MWA_Tile_analytic(za, az,
+                                               target_freq_Hz,
+                                               delays=delays,
+                                               zenithnorm=options.zenithnorm,
                                                jones=True)
         if options.wsclean_image:
             sign_q = -1
