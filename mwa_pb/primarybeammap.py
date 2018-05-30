@@ -184,8 +184,8 @@ def make_primarybeammap(datetimestring, delays, frequency,
     if (verbose):
       print "Loading 408 MHz map from %s..." % radio_image_touse
     f = pyfits.open(radio_image_touse)
-  except:
-    logger.error("Error opening 408 MHz image: %s\n" % (radio_image_touse))
+  except Exception, e:
+    logger.error("Error opening 408 MHz image: %s\nError: %s\n" % (radio_image_touse, e))
     return None
   skymap = f[0].data[0]
   # x=skymap[:,0].reshape(-1,1)
@@ -596,8 +596,8 @@ def return_beam(Alt, Az, delays, frequency):
   # this is the response for XX and YY
   try:
     respX, respY = primary_beam.MWA_Tile_analytic(theta, phi, freq=frequency * 1e6, delays=numpy.array(delays))
-  except:
-    logger.error('Error creating primary beams\n')
+  except Exception, e:
+    logger.error('Error creating primary beams: %s\n' % e)
     return None
   rX = numpy.real(numpy.conj(respX) * respX)
   rY = numpy.real(numpy.conj(respY) * respY)
@@ -701,8 +701,8 @@ def get_skytemp(datetimestring, delays, frequency, alpha=-2.6, verbose=True):
     if (verbose):
       print "Loading 408 MHz map from %s..." % radio_image_touse
     f = pyfits.open(radio_image_touse)
-  except:
-    logger.error("Error opening 408 MHz image: %s\n" % (radio_image_touse))
+  except Exception, e:
+    logger.error("Error opening 408 MHz image: %s\nError: %s\n" % (radio_image_touse, e))
     return None
   skymap = f[0].data[0]
 
@@ -747,8 +747,8 @@ def get_skytemp(datetimestring, delays, frequency, alpha=-2.6, verbose=True):
   # this is the response for XX and YY
   try:
     respX, respY = primary_beam.MWA_Tile_analytic(theta, phi, freq=frequency * 1e6, delays=numpy.array(delays))
-  except:
-    logger.error('Error creating primary beams\n')
+  except Exception, e:
+    logger.error('Error creating primary beams: %s\n' % e)
     return None
   rX = numpy.real(numpy.conj(respX) * respX)
   rY = numpy.real(numpy.conj(respY) * respY)

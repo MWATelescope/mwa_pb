@@ -96,7 +96,7 @@ def MWA_Tile_advanced(za, az, freq=100.0e6, delays=None, power=True, jones=False
   if delays.shape == (16,):
     try:
       delays = numpy.repeat(numpy.reshape(delays, (1, 16)), 2, axis=0)
-    except:
+    except Exception:
       logger.error('Unable to convert delays (shape=%s) to (2,16)' % (delays.shape))
       return None
   assert delays.shape == (2, 16), "Delays %s have unexpected shape %s" % (delays, delays.shape)
