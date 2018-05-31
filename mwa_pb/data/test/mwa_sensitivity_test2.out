@@ -1,0 +1,68 @@
+# WARNING:beam_full_EE: Code version date: 2017-07-20 (Sigma_P sign flipped standalone version)
+# WARNING:beam_full_EE: Assuming set of 16 antenna delays apply to both X and Y dipoles
+/opt/caastro/ext/anaconda/lib/python2.7/site-packages/matplotlib/cbook/deprecation.py:107: MatplotlibDeprecationWarning: Adding an axes using the same arguments as a previous axes currently reuses the earlier instance.  In a future version, a new instance will always be created and returned.  Meanwhile, this warning can be suppressed, and the future behavior ensured, by passing a unique label to each axes instance.
+  warnings.warn(message, mplDeprecation, stacklevel=1)
+# WARNING:beam_full_EE: Code version date: 2017-07-20 (Sigma_P sign flipped standalone version)
+# WARNING:beam_full_EE: Assuming set of 16 antenna delays apply to both X and Y dipoles
+########################################
+PARAMETERS :
+########################################
+gridpoint  = -1
+T_rcv type = trcv_from_skymodel_with_err
+########################################
+Using of MWA database is not required
+Pointing information for obsid=0
+gridpoint = -1
+delays    = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+Pointing direction to source = (az,za) = (0.00000000,0.00000000) [deg]
+T_rcv     = 0.00 K
+frequency=216320000.00 -> delays=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+T_rcv calculated from trcv_from_skymodel_with_err = 80.00 K
+Output beam file resolution = 1000 , output directory = None
+----------------------------------------------------------------
+Normalisation Jones matrix :
+----------------------------------------------------------------
+   (1.2360218006687465+0j)     |     (1.2360218006687465+0j) 
+   (1.235681676087658+0j)     |     (1.235681676087658+0j) 
+----------------------------------------------------------------
+grid2eq (1000, 1000)
+-89.93776555328775 63.21593153237752
+0.0036241466853410577 359.9980785990432
+-89.93776555328775 63.21593153237752
+-179.9999623413527 179.99960704411507
+VALUE : 216320000.00000000 0.02738003 0.02735550
+frequency=216320000.00 , polarisation=XX
+sum(beam) 12403.023033159821
+sum(beamsky) 2506773.4427182684
+Tant=sum(beamsky)/sum(beam)= 202.10987563405638
+Filename2 = 0_216.32MHz_XX_full_EE_beam
+Saved output image to file 0_216.32MHz_XX_full_EE_beam.fits
+Filename2 = 0_216.32MHz_XX_full_EE_sky
+Saved output image to file 0_216.32MHz_XX_full_EE_sky.fits
+Filename2 = 0_216.32MHz_XX_full_EE
+Saved output image to file 0_216.32MHz_XX_full_EE.fits
+Filename2 = 0_216.32MHz_XX_full_EE_scaled
+Saved output image to file 0_216.32MHz_XX_full_EE_scaled.fits
+frequency=216320000.00 , polarisation=YY
+sum(beam) 12403.036730214151
+sum(beamsky) 2580687.2855097996
+Tant=sum(beamsky)/sum(beam)= 208.06898678475827
+Filename2 = 0_216.32MHz_YY_full_EE_beam
+Saved output image to file 0_216.32MHz_YY_full_EE_beam.fits
+Filename2 = 0_216.32MHz_YY_full_EE_sky
+Saved output image to file 0_216.32MHz_YY_full_EE_sky.fits
+Filename2 = 0_216.32MHz_YY_full_EE
+Saved output image to file 0_216.32MHz_YY_full_EE.fits
+Filename2 = 0_216.32MHz_YY_full_EE_scaled
+Saved output image to file 0_216.32MHz_YY_full_EE_scaled.fits
+----------------------------------------------------------------
+Normalisation Jones matrix :
+----------------------------------------------------------------
+   (1.2360218006687465+0j)     |     (1.2360218006687465+0j) 
+   (1.235681676087658+0j)     |     (1.235681676087658+0j) 
+----------------------------------------------------------------
+216320000.00 Hz :
+		XX (216.32 MHz) : T_ant_XX = 202.11  = (2506773.44271827 / 12403.02303316) , beam(0.0000,0.0000)=1.00000010 , gain=126.38275005 , aeff=19.34313889, sensitivity (A/T) = 0.06856597574780923243 -> SEFD_XX = 40253.20 Jy -> noise_XX = 0.0255 Jy
+		YY (216.32 MHz) : T_ant_YY = 208.07  = (2580687.28550980 / 12403.03673021) , beam(0.0000,0.0000)=1.00000009 , gain=126.38260962 , aeff=19.34311740, sensitivity (A/T) = 0.06714751773514333888 -> SEFD_YY = 41103.53 Jy -> noise_YY = 0.0260 Jy
+Noise expected on XX images = 0.0255 Jy
+Noise expected on YY images = 0.0260 Jy

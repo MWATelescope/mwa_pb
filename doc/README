@@ -51,6 +51,16 @@
     diff calc_jones.out data/test/calc_jones.out
   
 
+
+   - Test case for mwa_sensitivity.py :
+
+     python mwa_sensitivity.py -b 18,13,8,3,17,12,7,2,16,11,6,1,15,10,5,0 -c 169 -p all -g 0  -m full_EE > mwa_sensitivity_test1.out 2>&1
+     python ./mwa_sensitivity.py -c 169 -p all -g 0  -m full_EE > mwa_sensitivity_test2.out 2>&1
+
+     compare output files with templates in :
+
+       diff mwa_sensitivity_test1.out data/test/mwa_sensitivity_test1.out
+       diff mwa_sensitivity_test2.out data/test/mwa_sensitivity_test2.out
   
 
 - Other usage examples :
