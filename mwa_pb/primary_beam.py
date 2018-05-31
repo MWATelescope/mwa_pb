@@ -79,7 +79,7 @@ def MWA_Tile_full_EE(za, az, freq,
 
 #########
 #########
-def MWA_Tile_advanced(za, az, freq=100.0e6, delays=None, power=True, jones=False):
+def MWA_Tile_advanced(za, az, freq=100.0e6, delays=None, zenithnorm=None, power=True, jones=False):
     """
     Use the new MWA tile model from mwa_tile.py that includes mutual coupling
     and the simulated dipole response. Returns the XX and YY response to an
@@ -92,6 +92,9 @@ def MWA_Tile_advanced(za, az, freq=100.0e6, delays=None, power=True, jones=False
     """
     if isinstance(delays, list):
         delays = numpy.array(delays)
+
+    if zenithnorm:
+        logger.warning('ERROR: MWA_Tile_advanced does not use the zenithnorm parameter.')
 
     if delays.shape == (16,):
         try:
