@@ -102,11 +102,7 @@ class ApertureArray(object):
         logger.info("%s MHz requested, selecting nearest freq: %s MHz" % (target_freq_Hz / 1.e6, self.freq / 1.e6))
 
         self.n_ant = n_ant
-        self.norm_fac = np.zeros((2, 2), dtype=np.complex128)
-
-        # MS : this initialisation has to be where it was (in calc_zenith_norm_fac) - otherwise it does not
-        # get initialised and program crashed with 2016 beam model
-        # self.norm_fac = None # cannot be this, as it is won't be initialised if != None : np.zeros((2, 2), dtype=np.complex128)
+        self.norm_fac = None
 
     def calc_zenith_norm_fac(self):
         """Calculate normalisation factors for the Jones vector for this
@@ -145,7 +141,7 @@ class ApertureArray(object):
            Input:
              j - Jones matrix for one or more spherical cordinates
         """
-        if not hasattr(self, 'norm_fac'):
+        if not self.norm_fac:
             self.calc_zenith_norm_fac()
         # Resize to extra dimensions for subsequent broadcasting during normalisation
         mynorm_fac = np.copy(self.norm_fac)
