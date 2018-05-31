@@ -417,7 +417,7 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
                                                                                                                   fstring,
                                                                                                                   pol,
                                                                                                                   Tant,
-                                                                                                                  numpy.nanmax(beamsky)[0])
+                                                                                                                  numpy.nanmax(beamsky))
                 plot_beamsky(beamsky, frequency, textlabel, filename + '_scaled', extension,
                              obstime=obstime, figsize=figsize, vmax=numpy.nanmax(beamsky) * 0.4, directory=directory)
 
