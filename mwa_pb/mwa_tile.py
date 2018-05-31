@@ -627,7 +627,7 @@ if __name__ == "__main__":
 
     logger.setLevel(logging.DEBUG)
     doplots = True
-    lat = config.MWAPOS.lat.deg
+    lat = config.MWAPOS.latitude.deg
     freq = 216e6
     (az, za) = makeAZZA()
 

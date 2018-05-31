@@ -284,7 +284,7 @@ def get_Haslam(freq, scaling=-2.55):
 def get_LST(gps):
     time = Time(gps, format='gps', scale='utc')
     time.delta_ut1_utc = 0.0
-    LST = time.sidereal_time('mean', config.MWAPOS.lon.hour)
+    LST = time.sidereal_time('mean', config.MWAPOS.longitude.hour)
     return LST.hour  # keep as decimal hr
 
 
@@ -490,8 +490,8 @@ def add_sources(fig, ax1, ax2, obstime=None, az_grid=None, za_grid=None, beamsky
 
     print "------------------------------"
     print "Adding sources for lst=%.2f [hours] , coordinates = (%.4f,%.4f) [deg]:" % (lst,
-                                                                                      config.MWAPOS.lon.deg,
-                                                                                      config.MWAPOS.lat.deg)
+                                                                                      config.MWAPOS.longitude.deg,
+                                                                                      config.MWAPOS.latitude.deg)
     print "------------------------------"
     # add text for sources
     # lst=get_LST(gps)
@@ -553,7 +553,7 @@ def plot_beamsky(beamsky, frequency, textlabel, filename, extension,
     # do the plotting
     # this sets up the figure with the right aspect ratio
     obstime.delta_ut1_utc = 0.0
-    lst = obstime.sidereal_time('mean', config.MWAPOS.lon.hour).hour
+    lst = obstime.sidereal_time('mean', config.MWAPOS.longitude.hour).hour
 
     fig = pylab.figure(figsize=(figsize, 0.6 * figsize), dpi=300)
     pylab.axis('on')

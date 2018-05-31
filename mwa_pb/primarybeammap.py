@@ -225,8 +225,8 @@ def make_primarybeammap(datetimestring, delays, frequency,
     observer = ephem.Observer()
     # make sure no refraction is included
     observer.pressure = 0
-    observer.long = config.MWAPOS.lon.rad
-    observer.lat = config.MWAPOS.lat.rad
+    observer.long = config.MWAPOS.longitude.rad
+    observer.lat = config.MWAPOS.latitude.rad
     observer.elevation = config.MWAPOS.height.value  # in metres
     observer.date = '%d/%d/%d %s' % (yr, mn, dy, UTs)
     LST_hours = observer.sidereal_time() * 180.0 / math.pi / 15.0
