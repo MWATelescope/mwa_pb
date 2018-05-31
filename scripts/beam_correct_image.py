@@ -512,6 +512,11 @@ def parse_options():
                       dest="rts_image",
                       default=False,
                       help="If it is RTS image -> XX needs to be swapped with YY in Vij")
+    parser.add_option('-z','--zenith_norm',
+                      action="store_true",
+                      dest="zenithnorm",
+                      default=False,
+                      help="If normalise to zenith [default %]")                      
 
     (options, args) = parser.parse_args()
 

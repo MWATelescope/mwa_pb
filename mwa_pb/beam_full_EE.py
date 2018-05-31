@@ -411,7 +411,7 @@ class Beam(object):
             logger.error(e)
             raise ValueError(e)
 
-            # change negative azimuths to positive ones, otherwise it won't work with the interpolation function below
+        # change negative azimuths to positive ones, otherwise it won't work with the interpolation function below
         phi_arr[phi_arr < 0] += 2.0 * math.pi
 
         logger.debug('Calculating a gridded beam and interpolating onto coordinates of shape %s...' % (phi_arr.shape,))
@@ -592,8 +592,7 @@ class Beam(object):
 
             # Save for this polarisation
             Jones[pol, 0] = Sigma_T
-            Jones[
-                pol, 1] = -Sigma_P  # 2017-05-30 : sign fixed by MS to reflect the fact that phi=90-az (it is not just change of values but orientation of base vector changes,
+            Jones[pol, 1] = -Sigma_P  # 2017-05-30 : sign fixed by MS to reflect the fact that phi=90-az (it is not just change of values but orientation of base vector changes,
             # hence the sign of the Phi component of electric field has to change too. It was also fixed
 
         return Jones
