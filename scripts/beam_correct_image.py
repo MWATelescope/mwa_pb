@@ -173,7 +173,7 @@ def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0, gps=0):
         RAnow, Decnow = RA, Dec
 
     # print "DEBUG = %s" % (Az) # different than what it was in the original version 
-    print "DEBUG = %s" % (Alt)
+    # print "DEBUG = %s" % (Alt)
 
     # go from altitude to zenith angle
     theta = (90 - Alt) * math.pi / 180

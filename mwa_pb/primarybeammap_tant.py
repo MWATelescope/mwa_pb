@@ -357,7 +357,7 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
     (ax0, ay0) = tile.getArrayFactor(az_grid, za_grid, frequency, za_delays[za_delay])
     val = numpy.abs(ax0)
     val_max = numpy.nanmax(val)
-    print "VALUE : %.8f %.8f %.8f" % (frequency, val_max[0], val[resolution / 2, resolution / 2])
+    # print "VALUE : %.8f %.8f %.8f" % (frequency, val_max[0], val[resolution / 2, resolution / 2])
 
     beamsky_sum_XX = 0
     beam_sum_XX = 0
