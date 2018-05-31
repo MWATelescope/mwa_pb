@@ -334,7 +334,7 @@ class ApertureArray(object):
         return j
 
 
-def convertJonesAzEl2HaDec(az, za, lat):
+def convertJonesAzEl2HaDec(az, za, dec, lat):
     """
     Generate a converter for arrays of Jones matrices in Az/ZA to HA/DEC.
     This is a rotation of the orthogonal az/za unit vectors to
