@@ -294,12 +294,10 @@ def make_beam(filename, ext=0, delays=None, jones=False,
                 ['YY', -8, 1, 1]]
         for p in pols:
             if freqfirst:
-                f[ext].data[0, len(frequencies) - 1] = J[:, :, p[2], p[
-                                                                         3]].transpose().real  # Changed from 'freqindex' to 'len(frequencies) - 1' to avoid using loop index
+                f[ext].data[0, len(frequencies) - 1] = J[:, :, p[2], p[3]].transpose().real  # Changed from 'freqindex' to 'len(frequencies) - 1' to avoid using loop index
                 f[ext].header['CRVAL4'] = p[1]
             else:
-                f[ext].data[len(frequencies) - 1, 0] = J[:, :, p[2], p[
-                                                                         3]].transpose().real  # Changed from 'freqindex' to 'len(frequencies) - 1' to avoid using loop index
+                f[ext].data[len(frequencies) - 1, 0] = J[:, :, p[2], p[3]].transpose().real  # Changed from 'freqindex' to 'len(frequencies) - 1' to avoid using loop index
                 f[ext].header['CRVAL3'] = p[1]
             f[ext].header.set('POLN', p[0] + '-real')
             outname = '%s_beam%sr.fits' % (root, p[0])
@@ -310,12 +308,10 @@ def make_beam(filename, ext=0, delays=None, jones=False,
             outnames.append(outname)
 
             if freqfirst:
-                f[ext].data[0, len(frequencies) - 1] = J[:, :, p[2], p[
-                                                                         3]].transpose().imag  # Changed from 'freqindex' to 'len(frequencies) - 1' to avoid using loop index
+                f[ext].data[0, len(frequencies) - 1] = J[:, :, p[2], p[3]].transpose().imag  # Changed from 'freqindex' to 'len(frequencies) - 1' to avoid using loop index
                 f[ext].header['CRVAL4'] = p[1]
             else:
-                f[ext].data[len(frequencies) - 1, 0] = J[:, :, p[2], p[
-                                                                         3]].transpose().imag  # Changed from 'freqindex' to 'len(frequencies) - 1' to avoid using loop index
+                f[ext].data[len(frequencies) - 1, 0] = J[:, :, p[2], p[3]].transpose().imag  # Changed from 'freqindex' to 'len(frequencies) - 1' to avoid using loop index
                 f[ext].header['CRVAL3'] = p[1]
             f[ext].header.set('POLN', p[0] + '-imag')
             outname = '%s_beam%si.fits' % (root, p[0])
