@@ -17,7 +17,7 @@ from astropy.coordinates import SkyCoord
 
 import numpy as np
 
-import mwa_sweet_spots
+from mwa_pb import mwa_sweet_spots
 
 # configure the logging
 logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
@@ -25,9 +25,9 @@ logger = logging.getLogger(__name__)
 # logger.setLevel(logging.WARNING)
 logger.setLevel(logging.DEBUG)
 
-import config
-import primary_beam
-import beam_tools
+from mwa_pb import config
+from mwa_pb import primary_beam
+from mwa_pb import beam_tools
 
 h5filepath = config.h5file
 

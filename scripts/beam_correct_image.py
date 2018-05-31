@@ -164,13 +164,16 @@ def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0, gps=0):
     source.obstime = mwatime
 
     source_altaz = source.transform_to('altaz')
-    Az, Alt = source_altaz.alt.deg, source_altaz.az.deg  # Transform to Topocentric Alt/Az at the current epoch
+    Alt, Az = source_altaz.alt.deg, source_altaz.az.deg  # Transform to Topocentric Alt/Az at the current epoch
 
     if precess:
         source_now = source.transform_to(FK5(equinox=mwatime))  # Transform to FK5 coordinates at the current epoch
         RAnow, Decnow = source_now.ra.deg, source_now.dec.deg
     else:
         RAnow, Decnow = RA, Dec
+
+    # print "DEBUG = %s" % (Az) # different than what it was in the original version 
+    print "DEBUG = %s" % (Alt)
 
     # go from altitude to zenith angle
     theta = (90 - Alt) * math.pi / 180
@@ -686,12 +689,14 @@ if __name__ == "__main__":
     sign_q = 1
     if model == 'full_EE' or model == '2016' or model == 'FEE' or model == 'Full_EE':
         logger.info("Correcting with full_EE(%s) model at frequency %.2f Hz" % (model, target_freq_Hz))
+        # print "DEBUG = %s" % (az)
         Jones = primary_beam.MWA_Tile_full_EE(za, az,
                                               target_freq_Hz,
                                               delays=delays,
                                               zenithnorm=options.zenithnorm,
                                               jones=True,
                                               interp=True)
+
         if options.wsclean_image:
             sign_uv = -1
     elif model == 'avg_EE' or model == 'advanced' or model == '2015' or model == 'AEE':
@@ -700,6 +705,7 @@ if __name__ == "__main__":
         Jones = primary_beam.MWA_Tile_advanced(za, az,
                                                target_freq_Hz,
                                                delays=delays,
+                                               zenithnorm=options.zenithnorm,
                                                jones=True)
         if options.wsclean_image:
             sign_uv = -1

@@ -413,6 +413,8 @@ class Beam(object):
 
         # change negative azimuths to positive ones, otherwise it won't work with the interpolation function below
         phi_arr[phi_arr < 0] += 2.0 * math.pi
+        
+        # print "DEBUG = %s" % (phi_arr)
 
         logger.debug('Calculating a gridded beam and interpolating onto coordinates of shape %s...' % (phi_arr.shape,))
         # Interpolate from gridded beam
