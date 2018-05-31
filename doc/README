@@ -21,21 +21,26 @@
       python ./make_beam_test.py -f wsclean_1067806072-0002-XX-dirty.fits -m 1067806072.metafits --obsid=1067806072 --model=analytic
       Compare :
          ds9 -scale zscale wsclean_1067806072-0002-XX-dirty_beamXX.fits &
+         ds9 -scale zscale wsclean_1067806072-0002-XX-dirty_beamYY.fits &
       Template results to compare to : data/test/wsclean_1067806072-0002-XX-dirty_beamXX-ANALYTIC.fits and data/test/wsclean_1067806072-0002-XX-dirty_beamYY-ANALYTIC.fits
          ds9 -scale zscale data/test/wsclean_1067806072-0002-XX-dirty_beamXX-ANALYTIC.fits &
+         ds9 -scale zscale data/test/wsclean_1067806072-0002-XX-dirty_beamYY-ANALYTIC.fits &
 
-    - 2014 model :
+    - 2014 model also known as advanced or Average embedded element mode (AEE) [Paper reference : A. Sutinjo et al (2015) : http://adsabs.harvard.edu/abs/2015RaSc...50...52S]
    
       python ./make_beam_test.py -f wsclean_1067806072-0002-XX-dirty.fits -m 1067806072.metafits --obsid=1067806072 --model=2014
       Compare results :
         ds9 -scale zscale wsclean_1067806072-0002-XX-dirty_beamXX.fits &
+        ds9 -scale zscale wsclean_1067806072-0002-XX-dirty_beamYY.fits &
       Template results to compare to : 
         ds9 -scale zscale data/test/wsclean_1067806072-0002-XX-dirty_beamXX-2014.fits &
+        ds9 -scale zscale data/test/wsclean_1067806072-0002-XX-dirty_beamYY-2014.fits &
 
-    - 2016 model :
+    - 2016 model ( full embeded elment model) , [Paper reference Sokolowski et al (2016) : http://adsabs.harvard.edu/abs/2017PASA...34...62S ]
       python ./make_beam_test.py -f wsclean_1067806072-0002-XX-dirty.fits -m 1067806072.metafits --obsid=1067806072 --model=2016
       Compare results :
          ds9 -scale zscale wsclean_1067806072-0002-XX-dirty_beamXX.fits &
+         
       Template results to compare to :
          ds9 -scale zscale data/test/wsclean_1067806072-0002-XX-dirty_beamXX-2016.fits &
 
