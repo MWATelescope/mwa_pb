@@ -106,7 +106,7 @@ class Dipole(object):
         logger.debug("There are " + str(nza) + " tabulated zenith angles: " + str(self.lookup_za))
         logger.debug("There are " + str(nph) + " tabulated phi angles: " + str(self.lookup_ph))
 
-    def getJones(self, az, za, freq):
+    def getJones(self, az, za, freq, zenith_norm=True):
         """Return the Jones matrix for arrays of az/za for a given freq
         az and za are numpy arrays of equal length.
         Results are in corrds of az/za unit vectors such that
@@ -116,7 +116,7 @@ class Dipole(object):
         By default, normalise to the zenith
         """
         if self.atype == 'short':
-            return self.getJonesShortDipole(az, za, freq)
+            return self.getJonesShortDipole(az, za, freq, zenith_norm=zenith_norm)
         elif self.atype == 'lookup':
             return self.getJonesLookup(az, za, freq)
         else:
