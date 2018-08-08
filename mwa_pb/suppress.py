@@ -76,20 +76,29 @@ def get_best_gridpoints(gps_start,
     for starttime in range(int(stime.gps), int(stime.gps + duration), int(step)):
         t = Time(starttime, format='gps', scale='utc')
         obs_source.obstime = t
-        obs_source_prec = obs_source.transform_to('altaz')
+        obs_source_altaz = obs_source.transform_to('altaz')
+
+        if obs_source_altaz.alt.deg < 15.0:
+            logger.debug("Source below pointing horizon at this time, skip this timestep.")
+            continue  # Source below pointing horizon at this time, skip this timestep.
 
         avoid_source.obstime = t
-        avoid_source_prec = avoid_source.transform_to('altaz')  # Use as, for example: avoid_source_prec.az.deg
+        avoid_source_altaz = avoid_source.transform_to('altaz')  # Use as, for example: avoid_source_altaz.az.deg
+
+        if avoid_source_altaz.alt.deg < 0.0:
+            tracklist.append((starttime, step, obs_source_altaz.az.deg, obs_source_altaz.alt.deg))
+            logger.debug("Avoided source below TRUE horizon, just use actual target az/alt for this timestep.")
+            continue  # Avoided source below TRUE horizon, just use actual target az/alt for this timestep.
 
         dist_deg = obs_source.separation(avoid_source).deg
 
-        logger.debug("Observed source at (az,alt) = (%.4f,%.4f) [deg]" % (obs_source_prec.az.deg, obs_source_prec.alt.deg))
-        logger.debug("Avoided  source at (az,alt) = (%.4f,%.4f) [deg]" % (avoid_source_prec.az.deg, avoid_source_prec.alt.deg))
+        logger.debug("Observed source at (az,alt) = (%.4f,%.4f) [deg]" % (obs_source_altaz.az.deg, obs_source_altaz.alt.deg))
+        logger.debug("Avoided  source at (az,alt) = (%.4f,%.4f) [deg]" % (avoid_source_altaz.az.deg, avoid_source_altaz.alt.deg))
         logger.debug("Anglular distance = %.2f [deg]" % (dist_deg))
         logger.debug("Gps time = %d" % t.gps)
 
-        dist_obs_degs = obs_source_prec.separation(gp_positions).deg
-        dist_avoid_degs = avoid_source_prec.separation(gp_positions).deg
+        dist_obs_degs = obs_source_altaz.separation(gp_positions).deg
+        dist_avoid_degs = avoid_source_altaz.separation(gp_positions).deg
 
         # select gridpoints within given angular distance :
         best_gridpoint = None
@@ -113,15 +122,15 @@ def get_best_gridpoints(gps_start,
                                                               gp_delays[i],
                                                               freq,
                                                               model=model,
-                                                              pointing_az_deg=obs_source_prec.az.deg,
-                                                              pointing_za_deg=90 - obs_source_prec.alt.deg,
+                                                              pointing_az_deg=obs_source_altaz.az.deg,
+                                                              pointing_za_deg=90 - obs_source_altaz.alt.deg,
                                                               zenithnorm=True)
                 beam_avoid = primarybeammap_tant.get_beam_power(t.gps,
                                                                 gp_delays[i],
                                                                 freq,
                                                                 model=model,
-                                                                pointing_az_deg=avoid_source_prec.az.deg,
-                                                                pointing_za_deg=90 - avoid_source_prec.alt.deg,
+                                                                pointing_az_deg=avoid_source_altaz.az.deg,
+                                                                pointing_za_deg=90 - avoid_source_altaz.alt.deg,
                                                                 zenithnorm=True)
 
                 gain_XX_obs = beam_obs['XX']
