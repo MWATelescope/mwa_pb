@@ -56,9 +56,9 @@ def get_best_gridpoints(gps_start,
     gp_alts = numpy.array([mwa_sweet_spots.all_grid_points[i][2] for i in gp_numbers])
     gp_delays = [mwa_sweet_spots.all_grid_points[i][4] for i in gp_numbers]
 
-    gp_positions = astropy.coordinates.AltAz(az=astropy.coordinates.Angle(gp_azes, unit=astropy.units.deg),
-                                             alt=astropy.coordinates.Angle(gp_alts, unit=astropy.units.deg),
-                                             location=config.MWAPOS)
+#    gp_positions = astropy.coordinates.AltAz(az=astropy.coordinates.Angle(gp_azes, unit=astropy.units.deg),
+#                                             alt=astropy.coordinates.Angle(gp_alts, unit=astropy.units.deg),
+#                                             location=config.MWAPOS)
     obs_source = SkyCoord(ra=obs_source_ra_deg,
                           dec=obs_source_dec_deg,
                           equinox='J2000',
@@ -96,6 +96,13 @@ def get_best_gridpoints(gps_start,
         logger.debug("Avoided  source at (az,alt) = (%.4f,%.4f) [deg]" % (avoid_source_altaz.az.deg, avoid_source_altaz.alt.deg))
         logger.debug("Anglular distance = %.2f [deg]" % (dist_deg))
         logger.debug("Gps time = %d" % t.gps)
+
+        gp_positions = astropy.coordinates.SkyCoord(alt=gp_alts,
+                                                    az=gp_azes,
+                                                    unit=astropy.units.deg,
+                                                    location=config.MWAPOS,
+                                                    frame=astropy.coordinates.AltAz,
+                                                    obstime=t)
 
         dist_obs_degs = obs_source_altaz.separation(gp_positions).deg
         dist_avoid_degs = avoid_source_altaz.separation(gp_positions).deg
