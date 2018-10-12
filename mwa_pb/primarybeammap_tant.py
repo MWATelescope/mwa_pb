@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
   Script to calculate MWA antenna temperature using one of the beam models (analytic, AEE or FEE) and scaled HASLAM sky map
 

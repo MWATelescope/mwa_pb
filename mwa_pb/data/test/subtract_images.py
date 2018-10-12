@@ -1,5 +1,4 @@
-#!/opt/caastro/ext/anaconda/bin/python
-
+#!/usr/bin/env python
 
 import astropy.io.fits as pyfits
 # import pylab

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """Tim's attempt to correct for Stokes leakage on images generated without 
 beam correction durign calibration"""
 

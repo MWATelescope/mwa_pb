@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 primarybeammap.py --freq=202.24 --beamformer=0,0,0,1,3,3,3,3,6,6,6,6,8,9,9,9 --datetimestring=20110926210616
 

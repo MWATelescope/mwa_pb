@@ -1,4 +1,5 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+
 """
     This is an extension of MWA_Tools/scripts/make_beam.py to enable new spherical harmonics beam model:
     e.g.

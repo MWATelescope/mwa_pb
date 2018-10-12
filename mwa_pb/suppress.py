@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Script finds optimal pointing so that beam in one source direction is maximised and in the direction of source 2 is minimised 
 developed specifically for Elaine S. observations of TN0924-2201 which is ~10 deg from HydA 

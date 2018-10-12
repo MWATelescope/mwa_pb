@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """Module containing measured and simulated impedances of MWA LNAs and dipoles
 """
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Script for calculating A/T for MWA 
 Script calling function primarybeammap_tant.py to calculate antenna temperature according to MWA beam model (analytic, AEE or FEE) and scaled Haslam map
