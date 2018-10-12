@@ -257,11 +257,11 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         za = float(sys.argv[2])
 
-    print "Find gridspot for (az,za) = (%.4f,%.4f) [deg]" % (az, za)
+    print(("Find gridspot for (az,za) = (%.4f,%.4f) [deg]" % (az, za)))
 
     gridpoint = find_closest_gridpoint(az, za)
-    print gridpoint
+    print(gridpoint)
 
     delays = get_delays(gridpoint[0])
-    print "Delays for gridpoint %d = %s" % (gridpoint[0], delays)
-    print "(Az,za) for gridpoint %d = %.8f,%.8f [deg]" % (gridpoint[0], gridpoint[1], gridpoint[3])
+    print(("Delays for gridpoint %d = %s" % (gridpoint[0], delays)))
+    print(("(Az,za) for gridpoint %d = %.8f,%.8f [deg]" % (gridpoint[0], gridpoint[1], gridpoint[3])))

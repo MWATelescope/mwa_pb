@@ -25,8 +25,8 @@ from matplotlib import pyplot as pylab
 
 import ephem
 
-import config
-import primary_beam
+from . import config
+from . import primary_beam
 
 defaultcolor = 'k'
 defaultsize = 8
@@ -128,7 +128,7 @@ def sunpositions():
     dec = []
     t = Time('2011-01-01 00:00:00', scale='utc')
     dt = TimeDelta(86400, format='sec')
-    for daynum in xrange(1, 366):
+    for daynum in range(1, 366):
         ras, decs, y, z = sunposition(t)
         if (ras > 180):
             ras -= 360
@@ -181,9 +181,9 @@ def make_primarybeammap(datetimestring, delays, frequency,
         return None
     try:
         if (verbose):
-            print "Loading 408 MHz map from %s..." % radio_image_touse
+            print(("Loading 408 MHz map from %s..." % radio_image_touse))
         f = pyfits.open(radio_image_touse)
-    except Exception, e:
+    except Exception as e:
         logger.error("Error opening 408 MHz image: %s\nError: %s\n" % (radio_image_touse, e))
         return None
     skymap = f[0].data[0]
@@ -198,7 +198,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
             tlefile = open(tle)
             tlelines = tlefile.readlines()
             tlefile.close()
-        except Exception, e:
+        except Exception as e:
             logger.error('Could not open TLE file %s: %s' % (tle, e))
 
     ra = (f[0].header.get('CRVAL1') +
@@ -230,7 +230,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
     observer.date = '%d/%d/%d %s' % (yr, mn, dy, UTs)
     LST_hours = observer.sidereal_time() * 180.0 / math.pi / 15.0
     if (verbose):
-        print "For %02d-%02d-%02d %s UT, LST=%s" % (yr, mn, dy, UTs, observer.sidereal_time())
+        print(("For %02d-%02d-%02d %s UT, LST=%s" % (yr, mn, dy, UTs, observer.sidereal_time())))
 
     # this will be the center of the image
     RA0 = 0
@@ -295,7 +295,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
         ra_sat, dec_sat, time_sat, sublong_sat, sublat_sat = satellite_positions(satellite,
                                                                                  observer,
                                                                                  compute_time0,
-                                                                                 range(0, duration, 1),
+                                                                                 list(range(0, duration, 1)),
                                                                                  RA0=RA0)
 
     # do the plotting
@@ -339,8 +339,8 @@ def make_primarybeammap(datetimestring, delays, frequency,
     contourcolors = ['r', 'c', 'y', 'm', 'w', 'g', 'b']
     if (isinstance(frequency, float) or isinstance(frequency, int)):
         if (verbose):
-            print "Creating primary beam response for frequency %.2f MHz..." % (frequency)
-            print "Beamformer delays are %s" % delays
+            print(("Creating primary beam response for frequency %.2f MHz..." % (frequency)))
+            print(("Beamformer delays are %s" % delays))
         r = return_beam(Alt, Az, delays, frequency)
         if (r is None):
             return None
@@ -351,7 +351,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
             ramax = RA[i][0]
             if (ramax < 0):
                 ramax += 360
-            print "Sensitivity is max at (RA,Dec)=(%.5f,%.5f)" % (ramax, Dec[i][0])
+            print(("Sensitivity is max at (RA,Dec)=(%.5f,%.5f)" % (ramax, Dec[i][0])))
 
         # put on contours for the beam
         ax1.contour(RA / 15.0, Dec, Z2, contourlevels, colors='r')
@@ -362,8 +362,8 @@ def make_primarybeammap(datetimestring, delays, frequency,
         for f in frequency:
             color = contourcolors[icolor]
             if (verbose):
-                print "Creating primary beam response for frequency %.2f MHz..." % (f)
-                print "Beamformer delays are %s" % delays
+                print(("Creating primary beam response for frequency %.2f MHz..." % (f)))
+                print(("Beamformer delays are %s" % delays))
             r = return_beam(Alt, Az, delays, f)
             if r is None:
                 return None
@@ -374,7 +374,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
                 ramax = RA[i][0]
                 if (ramax < 0):
                     ramax += 360
-                print "Sensitivity is max at (RA,Dec)=(%.5f,%.5f)" % (ramax, Dec[i][0])
+                print(("Sensitivity is max at (RA,Dec)=(%.5f,%.5f)" % (ramax, Dec[i][0])))
 
             # put on contours for the beam
             ax1.contour(RA / 15.0, Dec, Z2, contourlevels, colors=color)
@@ -385,7 +385,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
                 icolor = 0
 
     # plot the horizon line
-    RA_Horz, Dec_Horz = zip(*sorted(zip(RA_Horz, Dec_Horz)))
+    RA_Horz, Dec_Horz = list(zip(*sorted(zip(RA_Horz, Dec_Horz))))
     ax1.plot(numpy.array(RA_Horz) / 15.0, numpy.array(Dec_Horz), 'k')
     x1 = 12 + RA0 / 15
     x2 = -12 + RA0 / 15
@@ -406,7 +406,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
     ax1.set_ylabel('Declination (degrees)')
     # plot the Sun
     ax1.plot(RAsun / 15.0, Decsun, 'yo', markersize=10)
-    RAsuns, Decsuns = zip(*sorted(zip(RAsuns, Decsuns)))
+    RAsuns, Decsuns = list(zip(*sorted(zip(RAsuns, Decsuns))))
     if (sunline):
         ax1.plot(numpy.array(RAsuns) / 15.0, numpy.array(Decsuns), 'y-')
 
@@ -417,7 +417,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
         if (RAmoon < -180 + RA0):
             RAmoon += 360
         ax1.plot(RAmoon / 15.0, Decmoon, 'ko', markersize=10)
-        print RAmoon, Decmoon
+        print((RAmoon, Decmoon))
 
     if jupiter:
         RAjupiter, Decjupiter, Azjupiter, Altjupiter = jupiterposition(obstime)
@@ -426,7 +426,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
         if (RAjupiter < -180 + RA0):
             RAjupiter += 360
         ax1.plot(RAjupiter / 15.0, Decjupiter, 'bo', markersize=8)
-        print RAjupiter, Decjupiter
+        print((RAjupiter, Decjupiter))
 
     if len(ra_sat) > 0:
         coords = SkyCoord(ra=ra_sat, dec=dec_sat, equinox='J2000', unit=(astropy.units.deg, astropy.units.deg))
@@ -516,7 +516,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
         fstring = "[" + ','.join(["%.2f" % f for f in frequency]) + "]"
         textlabel = '%04d-%02d-%02d %02d:%02d:%02d %s MHz' % (yr, mn, dy, hour, minute, second, fstring)
         icolor = 0
-        for i in xrange(len(frequency)):
+        for i in range(len(frequency)):
             color = contourcolors[icolor]
             ax1.text(x1 - 1,
                      70 - 10 * i,
@@ -578,7 +578,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
         filename = directory + '/' + filename
     try:
         pylab.savefig(filename)
-    except RuntimeError, err:
+    except RuntimeError as err:
         logger.error('Error saving figure: %s\n' % err)
         return None
 
@@ -600,7 +600,7 @@ def return_beam(Alt, Az, delays, frequency):
     # this is the response for XX and YY
     try:
         respX, respY = primary_beam.MWA_Tile_analytic(theta, phi, freq=frequency * 1e6, delays=numpy.array(delays))
-    except Exception, e:
+    except Exception as e:
         logger.error('Error creating primary beams: %s\n' % e)
         return None
     rX = numpy.real(numpy.conj(respX) * respX)
@@ -703,9 +703,9 @@ def get_skytemp(datetimestring, delays, frequency, alpha=-2.6, verbose=True):
         return None
     try:
         if (verbose):
-            print "Loading 408 MHz map from %s..." % radio_image_touse
+            print(("Loading 408 MHz map from %s..." % radio_image_touse))
         f = pyfits.open(radio_image_touse)
-    except Exception, e:
+    except Exception as e:
         logger.error("Error opening 408 MHz image: %s\nError: %s\n" % (radio_image_touse, e))
         return None
     skymap = f[0].data[0]
@@ -731,7 +731,7 @@ def get_skytemp(datetimestring, delays, frequency, alpha=-2.6, verbose=True):
     obstime = Time('%d-%d-%d %s' % (yr, mn, dy, UTs), scale='utc')
     obstime.delta_ut1_utc = 0
     if (verbose):
-        print "For %02d-%02d-%02d %s UT, LST=%6.3f" % (yr, mn, dy, UTs, obstime.sidereal_time(kind='mean').hour)
+        print(("For %02d-%02d-%02d %s UT, LST=%6.3f" % (yr, mn, dy, UTs, obstime.sidereal_time(kind='mean').hour)))
 
     RA, Dec = numpy.meshgrid(ra * 15, dec)
     coords = SkyCoord(ra=RA, dec=Dec, equinox='J2000', unit=(astropy.units.deg, astropy.units.deg))
@@ -741,8 +741,8 @@ def get_skytemp(datetimestring, delays, frequency, alpha=-2.6, verbose=True):
     Az, Alt = coords_prec.az.deg, coords_prec.alt.deg
 
     if (verbose):
-        print "Creating primary beam response for frequency %.2f MHz..." % (frequency)
-        print "Beamformer delays are %s" % delays
+        print(("Creating primary beam response for frequency %.2f MHz..." % (frequency)))
+        print(("Beamformer delays are %s" % delays))
     # get the beam response
     # first go from altitude to zenith angle
     theta = (90 - Alt) * math.pi / 180
@@ -751,7 +751,7 @@ def get_skytemp(datetimestring, delays, frequency, alpha=-2.6, verbose=True):
     # this is the response for XX and YY
     try:
         respX, respY = primary_beam.MWA_Tile_analytic(theta, phi, freq=frequency * 1e6, delays=numpy.array(delays))
-    except Exception, e:
+    except Exception as e:
         logger.error('Error creating primary beams: %s\n' % e)
         return None
     rX = numpy.real(numpy.conj(respX) * respX)

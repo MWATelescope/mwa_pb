@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 import astropy.io.fits as pyfits
 
-import config
+from . import config
 
 logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger(__name__)  # default logger level is WARNING
@@ -207,8 +207,8 @@ if __name__ == "__main__":
     freqs = [80, 130, 150, 200, 230]
     z = LNAImpedance()
     fs = numpy.array(freqs) * 1e6
-    print "LNA Impedance at " + str(freqs) + " MHz"
-    print z.getZ(fs)
+    print(("LNA Impedance at " + str(freqs) + " MHz"))
+    print((z.getZ(fs)))
     # delays = numpy.zeros(32)
     # set delays for 14 degs off zenith along meridian
     za = "14"

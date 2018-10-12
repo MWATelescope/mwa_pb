@@ -43,7 +43,7 @@ def get_azza_from_fits(filename, ext=0):
 
     try:
         f = pyfits.open(filename)
-    except IOError, err:
+    except IOError as err:
         logger.error('Unable to open %s for reading\n%s', filename, err)
         return None
     if isinstance(ext, int):
@@ -51,7 +51,7 @@ def get_azza_from_fits(filename, ext=0):
             logger.error('FITS file %s does not have extension %d' % (filename, ext))
             return None
     elif isinstance(ext, str):
-        for extnum in xrange(len(f)):
+        for extnum in range(len(f)):
             if ext.upper() == f[extnum].name:
                 logger.info('Found matching extension %s[%d] = %s' % (filename, extnum, ext))
                 ext = extnum
@@ -103,7 +103,7 @@ def get_azza_from_fits(filename, ext=0):
     Yflat = Y.flatten()
     FF = ff * np.ones(Xflat.shape)
     Tostack = [Xflat, Yflat, FF]
-    for i in xrange(3, naxes):
+    for i in range(3, naxes):
         Tostack.append(np.ones(Xflat.shape))
     pixcrd = np.vstack(Tostack).transpose()
 
@@ -112,7 +112,7 @@ def get_azza_from_fits(filename, ext=0):
         # The second argument is "origin" -- in this case we're declaring we
         # have 1-based (Fortran-like) coordinates.
         sky = wcs.wcs_pix2world(pixcrd, 1)
-    except Exception, e:
+    except Exception as e:
         logger.error('Problem converting to WCS: %s' % e)
         return None
 
@@ -259,7 +259,7 @@ def Dij_beam_correct(j, Dij, centre=None):
                 # out[:,:,i,j]=np.dot(my_jinv, np.dot(Dij[:,:,i,j], my_jHinv))
                 out[:, :, i, j] = np.dot(my_j, np.dot(Dij[:, :, i, j], my_jH))
     else:
-        print 'FIXME for other lengths!!'
+        print('FIXME for other lengths!!')
         return
     return out
 
@@ -320,7 +320,7 @@ def estimateSkyBrightnessMatrix(j1, j2, Vij):
                 # J1^-1 (Vij (J2^H)^-1)
                 b[:, :, i, j] = np.dot(j1inv[:, :, i, j], np.dot(Vij[:, :, i, j], j2Hinv[:, :, i, j]))
     else:
-        print 'FIXME for other lengths!!'
+        print('FIXME for other lengths!!')
         return
     return b
 
@@ -344,8 +344,8 @@ def calc_ratio(dec, target_freq_Hz, gridpoint):
     za = dec + 26.7
     az = 0
 
-    print "\n\n\n\n"
-    print "################################# DEC = %.2f #################################" % dec
+    print("\n\n\n\n")
+    print("################################# DEC = %.2f #################################" % dec)
     za_rad = za * math.pi / 180.0
     az_rad = az * math.pi / 180.0
     za_rad = np.array([[za_rad]])
@@ -354,11 +354,11 @@ def calc_ratio(dec, target_freq_Hz, gridpoint):
     # non-realistic scenario - I am ~tracking the source with the closest sweetspot - whereas I should be staying at the same sweetspot
     #   gridpoint=find_closest_gridpoint(za)
     #
-    print "dec=%.4f [deg] -> za=%.4f [deg] - %s" % (dec, za, gridpoint)
+    print("dec=%.4f [deg] -> za=%.4f [deg] - %s" % (dec, za, gridpoint))
     delays = gridpoint[4]
     delays = np.vstack((delays, delays))
-    print delays
-    print "-----------"
+    print(delays)
+    print("-----------")
 
     Jones_FullEE = primary_beam.MWA_Tile_full_EE(za_rad, az_rad, target_freq_Hz, delays=delays, zenithnorm=True,
                                                  jones=True, interp=True)
@@ -368,27 +368,27 @@ def calc_ratio(dec, target_freq_Hz, gridpoint):
     # TEST if equivalent to :
     Jones_FullEE_2D = Jones_FullEE_swap[:, :, 0, 0]
     # Jones_FullEE_2D = np.array([ [Jones_FullEE_swap[0, 0][0][0], Jones_FullEE_swap[0, 1][0][0]], [Jones_FullEE_swap[1, 0][0][0], Jones_FullEE_swap[1, 1][0][0]] ])
-    print "Jones FullEE:"
-    print "----------------------"
-    print Jones_FullEE
-    print "----------------------"
-    print Jones_FullEE_2D
-    print "----------------------"
+    print("Jones FullEE:")
+    print("----------------------")
+    print(Jones_FullEE)
+    print("----------------------")
+    print(Jones_FullEE_2D)
+    print("----------------------")
 
     #  Average Embeded Element model:
-    print "size(delays) = %d" % np.size(delays)
+    print("size(delays) = %d" % np.size(delays))
     Jones_AEE = primary_beam.MWA_Tile_advanced(za_rad, az_rad, target_freq_Hz, delays=delays, jones=True)
     # Jones_AEE = primary_beam.MWA_Tile_advanced(np.array([[0]]), np.array([[0]]), target_freq_Hz, delays=delays, zenithnorm=True, jones=True)
     Jones_AEE_swap = np.swapaxes(np.swapaxes(Jones_AEE, 0, 2), 1, 3)
     Jones_AEE_2D = Jones_AEE_swap[:, :, 0, 0]
     # Jones_AEE_2D = np.array([ [Jones_AEE_swap[0, 0][0][0], Jones_AEE_swap[0, 1][0][0]], [Jones_AEE_swap[1, 0][0][0], Jones_AEE_swap[1, 1][0][0]] ])
-    print "----------------------"
-    print "Jones AEE:"
-    print "----------------------"
-    print Jones_AEE
-    print "----------------------"
-    print Jones_AEE_2D
-    print "----------------------"
+    print("----------------------")
+    print("Jones AEE:")
+    print("----------------------")
+    print(Jones_AEE)
+    print("----------------------")
+    print(Jones_AEE_2D)
+    print("----------------------")
 
     # Analytical Model:
     # beams = {}
@@ -402,18 +402,18 @@ def calc_ratio(dec, target_freq_Hz, gridpoint):
     Jones_Anal_swap = np.swapaxes(np.swapaxes(Jones_Anal, 0, 2), 1, 3)
     Jones_Anal_2D = Jones_Anal_swap[:, :, 0, 0]
     # Jones_Anal_2D = np.array([ [Jones_Anal_swap[0, 0][0][0], Jones_Anal_swap[0, 1][0][0]] , [Jones_Anal_swap[1, 0][0][0],Jones_Anal_swap[1, 1][0][0]] ])
-    print "----------------------"
-    print "Jones Analytic:"
-    print "----------------------"
-    print Jones_Anal
-    print "----------------------"
-    print Jones_Anal_2D
-    print "----------------------"
-    print "TEST:"
-    print "----------------------"
-    print "%.8f    %.8f" % (Jones_Anal_2D[0, 0], Jones_Anal_2D[0, 1])
-    print "%.8f    %.8f" % (Jones_Anal_2D[1, 0], Jones_Anal_2D[1, 1])
-    print "----------------------"
+    print("----------------------")
+    print("Jones Analytic:")
+    print("----------------------")
+    print(Jones_Anal)
+    print("----------------------")
+    print(Jones_Anal_2D)
+    print("----------------------")
+    print("TEST:")
+    print("----------------------")
+    print("%.8f    %.8f" % (Jones_Anal_2D[0, 0], Jones_Anal_2D[0, 1]))
+    print("%.8f    %.8f" % (Jones_Anal_2D[1, 0], Jones_Anal_2D[1, 1]))
+    print("----------------------")
 
     # Use Jones_FullEE_2D as REAL sky and then ...
     B_sky = np.array([[1, 0], [0, 1]])
@@ -424,9 +424,9 @@ def calc_ratio(dec, target_freq_Hz, gridpoint):
     Jones_FullEE_2D_H_Inv = inv2x2(Jones_FullEE_2D_H)
     Jones_FullEE_2D_Inv = inv2x2(Jones_FullEE_2D)
     B_sky_cal = np.dot(Jones_FullEE_2D_Inv, np.dot(B_app, Jones_FullEE_2D_H_Inv))
-    print B_sky
-    print "Recovered using FullEE model:"
-    print B_sky_cal
+    print(B_sky)
+    print("Recovered using FullEE model:")
+    print(B_sky_cal)
 
     # calibrate back using AEE model :
     #   Jones_AEE_2D=Jones_Anal_2D # overwrite Jones_AEE_2D with Analytic to use it for calibration
@@ -434,8 +434,8 @@ def calc_ratio(dec, target_freq_Hz, gridpoint):
     Jones_AEE_2D_H_Inv = inv2x2(Jones_AEE_2D_H)
     Jones_AEE_2D_Inv = inv2x2(Jones_AEE_2D)
     B_sky_cal = np.dot(Jones_AEE_2D_Inv, np.dot(B_app, Jones_AEE_2D_H_Inv))
-    print "Recovered using AEE model:"
-    print B_sky_cal
+    print("Recovered using AEE model:")
+    print(B_sky_cal)
     # I_cal = B_sky_cal[0, 0] + B_sky_cal[1, 1]
     #   print "FINAL : %.8f ratio = %.8f / 2 = %.8f" % (dec,abs(I_cal),(abs(I_cal)/2.00))
     # ratio = abs(B_sky_cal[0][0] / B_sky_cal[1][1])
@@ -445,7 +445,7 @@ def calc_ratio(dec, target_freq_Hz, gridpoint):
     gleam_XX = B_sky_cal[0][0]
     gleam_YY = B_sky_cal[1][1]
     # gleam_q_leakage = (B_sky_cal[0][0] - B_sky_cal[1][1]) / (B_sky_cal[0][0] + B_sky_cal[1][1])
-    print "DEBUG (DEC = %.2f deg) : GLEAM-ratio = %.4f = (%s / %s)" % (dec, gleam_ratio, gleam_XX, gleam_YY)
+    print("DEBUG (DEC = %.2f deg) : GLEAM-ratio = %.4f = (%s / %s)" % (dec, gleam_ratio, gleam_XX, gleam_YY))
 
     return (gleam_ratio.real, gleam_XX, gleam_YY)
 
@@ -484,12 +484,12 @@ def calc_jones(az, za, target_freq_Hz=205e6):
     az_rad = np.array([[az_rad]])
 
     gridpoint = mwa_sweet_spots.find_closest_gridpoint(az, za)
-    print "Az = %.2f [deg], za = %.2f [deg], gridpoint = %d" % (az, za, gridpoint[0])
+    print("Az = %.2f [deg], za = %.2f [deg], gridpoint = %d" % (az, za, gridpoint[0]))
 
     delays = gridpoint[4]
     delays = np.vstack((delays, delays))
-    print delays
-    print "-----------"
+    print(delays)
+    print("-----------")
 
     Jones_FullEE = primary_beam.MWA_Tile_full_EE(za_rad,
                                                  az_rad,
@@ -503,12 +503,12 @@ def calc_jones(az, za, target_freq_Hz=205e6):
     # TEST if equivalent to :
     Jones_FullEE_2D = Jones_FullEE_swap[:, :, 0, 0]
     # Jones_FullEE_2D = np.array([ [Jones_FullEE_swap[0, 0][0][0], Jones_FullEE_swap[0, 1][0][0]] , [Jones_FullEE_swap[1, 0][0][0], Jones_FullEE_swap[1, 1][0][0]] ])
-    print "Jones FullEE:"
-    print "----------------------"
-    print Jones_FullEE
-    print "----------------------"
-    print Jones_FullEE_2D
-    print "----------------------"
+    print("Jones FullEE:")
+    print("----------------------")
+    print(Jones_FullEE)
+    print("----------------------")
+    print(Jones_FullEE_2D)
+    print("----------------------")
 
     beams = {}
     beams['XX'], beams['YY'] = primary_beam.MWA_Tile_full_EE(za_rad,
@@ -517,22 +517,22 @@ def calc_jones(az, za, target_freq_Hz=205e6):
                                                              delays=delays,
                                                              zenithnorm=True,
                                                              power=True)
-    print "Beams power = %.4f / %.4f" % (beams['XX'], beams['YY'])
+    print("Beams power = %.4f / %.4f" % (beams['XX'], beams['YY']))
 
     # Average Embeded Element model:
-    print "size(delays) = %d" % np.size(delays)
+    print("size(delays) = %d" % np.size(delays))
     Jones_AEE = primary_beam.MWA_Tile_advanced(za_rad, az_rad, target_freq_Hz, delays=delays, jones=True)
     # Jones_AEE = primary_beam.MWA_Tile_advanced(np.array([[0]]), np.array([[0]]), target_freq_Hz,delays=delays, zenithnorm=True, jones=True)
     Jones_AEE_swap = np.swapaxes(np.swapaxes(Jones_AEE, 0, 2), 1, 3)
     Jones_AEE_2D = Jones_AEE_swap[:, :, 0, 0]
     # Jones_AEE_2D = np.array([ [Jones_AEE_swap[0, 0][0][0], Jones_AEE_swap[0, 1][0][0]], [Jones_AEE_swap[1, 0][0][0], Jones_AEE_swap[1, 1][0][0]] ])
-    print "----------------------"
-    print "Jones AEE:"
-    print "----------------------"
-    print Jones_AEE
-    print "----------------------"
-    print Jones_AEE_2D
-    print "----------------------"
+    print("----------------------")
+    print("Jones AEE:")
+    print("----------------------")
+    print(Jones_AEE)
+    print("----------------------")
+    print(Jones_AEE_2D)
+    print("----------------------")
 
     Jones_Anal = primary_beam.MWA_Tile_analytic(za_rad,
                                                 az_rad,
@@ -543,22 +543,22 @@ def calc_jones(az, za, target_freq_Hz=205e6):
     Jones_Anal_swap = np.swapaxes(np.swapaxes(Jones_Anal, 0, 2), 1, 3)
     Jones_Anal_2D = Jones_Anal_swap[:, :, 0, 0]
 
-    print "----------------------  COMPARISON OF JONES MATRICES FEE vs. AEE ----------------------"
-    print "Jones FullEE:"
-    print "----------------------"
-    print Jones_FullEE_2D
-    print "----------------------"
-    print
-    print "Jones AEE:"
-    print "----------------------"
-    print Jones_AEE_2D
-    print "----------------------"
-    print
-    print "----------------------"
-    print "Jones Analytic:"
-    print "----------------------"
-    print Jones_Anal_2D
-    print "----------------------"
+    print("----------------------  COMPARISON OF JONES MATRICES FEE vs. AEE ----------------------")
+    print("Jones FullEE:")
+    print("----------------------")
+    print(Jones_FullEE_2D)
+    print("----------------------")
+    print()
+    print("Jones AEE:")
+    print("----------------------")
+    print(Jones_AEE_2D)
+    print("----------------------")
+    print()
+    print("----------------------")
+    print("Jones Analytic:")
+    print("----------------------")
+    print(Jones_Anal_2D)
+    print("----------------------")
 
     return (Jones_FullEE_2D, Jones_AEE_2D, Jones_Anal_2D)
 
@@ -575,13 +575,13 @@ if __name__ == "__main__":
     target_freq_MHz = options.freq
     outfile = "ratio_vs_dec_%.2fMHz.out" % (target_freq_MHz)
 
-    print "-------------------------------------------"
-    print "PARAMETERS:"
-    print "-------------------------------------------"
-    print "Freq    = %.2f [Hz]" % (target_freq_Hz)
-    print "(az,za) = (%.2f,%.2f) [deg]" % (options.az, options.za)
-    print "Outfile = %s" % (outfile)
-    print "-------------------------------------------"
+    print("-------------------------------------------")
+    print("PARAMETERS:")
+    print("-------------------------------------------")
+    print("Freq    = %.2f [Hz]" % (target_freq_Hz))
+    print("(az,za) = (%.2f,%.2f) [deg]" % (options.az, options.za))
+    print("Outfile = %s" % (outfile))
+    print("-------------------------------------------")
 
     outf = open(outfile, "w")
     outf.write("# DEC[deg]  S_xx/S_yy   Q_leakage GLEAM-RATIO-MS-way GLEAM-Ratio-DanielWAY\n")

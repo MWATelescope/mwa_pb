@@ -19,9 +19,9 @@ import astropy
 from astropy.coordinates import SkyCoord, get_sun
 from astropy.time import Time
 
-import config
-import primarybeammap_tant
-import mwa_sweet_spots
+from . import config
+from . import primarybeammap_tant
+from . import mwa_sweet_spots
 
 # configure the logging
 logging.basicConfig()
@@ -48,7 +48,7 @@ def get_best_gridpoints(gps_start,
     if model not in ['analytic', 'advanced', 'full_EE', 'full_EE_AAVS05']:
         logger.error("Model %s not found\n" % model)
 
-    gp_numbers = mwa_sweet_spots.all_grid_points.keys()
+    gp_numbers = list(mwa_sweet_spots.all_grid_points.keys())
     gp_numbers.sort()
     gp_azes = numpy.array([mwa_sweet_spots.all_grid_points[i][1] for i in gp_numbers])
     gp_alts = numpy.array([mwa_sweet_spots.all_grid_points[i][2] for i in gp_numbers])

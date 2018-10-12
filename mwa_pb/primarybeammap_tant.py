@@ -24,10 +24,10 @@ import astropy
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, Angle, AltAz, ICRS
 
-import config
-import beam_tools
-import primary_beam
-import mwa_tile
+from . import config
+from . import beam_tools
+from . import primary_beam
+from . import mwa_tile
 
 EPS = numpy.finfo(numpy.float64).eps  # machine epsilon
 
@@ -115,7 +115,7 @@ def get_azza_arrays_fov(gridsize=361, fov=180.0):
     dsqu = (c ** 2 + r ** 2) * (myfov) ** 2
     p = (dsqu < (1.0 + EPS))
     za_grid[p] = numpy.arcsin(dsqu[p] ** 0.5)
-    print 'Using standard orthographic projection'
+    print('Using standard orthographic projection')
     az_grid = numpy.arctan2(c, r)
     mask[p] = 1.0  # set mask
     p = (dsqu >= (1.0 + EPS))
@@ -149,16 +149,16 @@ def map_sky(skymap, obstime, az_grid, za_grid):
     ra_index = (((36 - ra) % 24) / 24) * size_ra
     dec_index = (dec_grid / 180.0 + 0.5) * size_dec
 
-    print ra_index.min(), ra_index.max()
-    print dec_index.min(), dec_index.max()
+    print((ra_index.min(), ra_index.max()))
+    print((dec_index.min(), dec_index.max()))
 
     # select pixels of sky map, using ra and dec index values
     # rounded down to nearest index integer
     # print p
     # print numpy.rint(ra_index[p]),numpy.rint(dec_index[p])
-    print numpy.rint(ra_index[p]).astype(int)
-    print numpy.rint(dec_index[p]).astype(int)
-    print skymap.shape
+    print((numpy.rint(ra_index[p]).astype(int)))
+    print((numpy.rint(dec_index[p]).astype(int)))
+    print((skymap.shape))
     out[p] = skymap[dec_index[p].astype(int), ra_index[p].astype(int)]
     return out
 
@@ -176,7 +176,7 @@ def map_sky_astropy(skymap, RA, dec, gps, az_grid, za_grid):
     """
     # Get az, ZA grid transformed to equatorial coords
     grid2eq = horz2eq(az_grid, za_grid, gps)
-    print 'grid2eq', grid2eq['RA'].shape
+    print(('grid2eq', grid2eq['RA'].shape))
 
     # Set up interp function using sky map
     # flip so interpolation has increasing values
@@ -187,14 +187,14 @@ def map_sky_astropy(skymap, RA, dec, gps, az_grid, za_grid):
     # https://github.com/scipy/scipy/issues/3703
 
     # interpolate map onto az,ZA grid
-    print numpy.min(grid2eq['dec']), numpy.max(grid2eq['dec'])
-    print numpy.min(grid2eq['RA']), numpy.max(grid2eq['RA'])
+    print((numpy.min(grid2eq['dec']), numpy.max(grid2eq['dec'])))
+    print((numpy.min(grid2eq['RA']), numpy.max(grid2eq['RA'])))
     # Convert to RA=-180 - 180 format (same as Haslam)
     # We do it this way so RA values are always increasing for RegularGridInterpolator
     grid2eq['RA'][grid2eq['RA'] > 180] = grid2eq['RA'][grid2eq['RA'] > 180] - 360
 
-    print numpy.min(grid2eq['dec']), numpy.max(grid2eq['dec'])
-    print numpy.min(grid2eq['RA']), numpy.max(grid2eq['RA'])
+    print((numpy.min(grid2eq['dec']), numpy.max(grid2eq['dec'])))
+    print((numpy.min(grid2eq['RA']), numpy.max(grid2eq['RA'])))
     my_map = my_interp_fn(numpy.dstack([grid2eq['dec'], grid2eq['RA']]))
     #    print "np.vstack([grid2eq['dec'], grid2eq['RA']])",np.vstack([grid2eq['dec'], grid2eq['RA']]).shape
     #    print "np.hstack([grid2eq['dec'], grid2eq['RA']])",np.hstack([grid2eq['dec'], grid2eq['RA']]).shape
@@ -293,7 +293,7 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
                         b_add_sources=False):
     """
     """
-    print "Output beam file resolution = %d , output directory = %s" % (resolution, directory)
+    print(("Output beam file resolution = %d , output directory = %s" % (resolution, directory)))
     #    (az_grid, za_grid) = beam_tools.makeAZZA(resolution,'ZEA') #Get grids in radians
     (az_grid, za_grid, n_total, dOMEGA) = beam_tools.makeAZZA_dOMEGA(resolution, 'ZEA')  # TEST SIN vs. ZEA
     az_grid = az_grid * 180 / math.pi
@@ -313,7 +313,7 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
                                                                   freq=frequency, delays=delays,
                                                                   zenithnorm=zenithnorm, power=True)
     elif model == 'avg_EE' or model == 'advanced' or model == '2015' or model == 'AEE':
-        print "Using adanced model ???"
+        print("Using adanced model ???")
         beams['XX'], beams['YY'] = primary_beam.MWA_Tile_advanced(theta, phi,
                                                                   freq=frequency, delays=delays,
                                                                   power=True)
@@ -369,17 +369,17 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
 
     for pol in pols:
         # Get gridded sky
-        print 'frequency=%.2f , polarisation=%s' % (frequency, pol)
+        print(('frequency=%.2f , polarisation=%s' % (frequency, pol)))
         beam = beams[pol]
         beamsky = beam * sky_grid
         beam_dOMEGA = beam * dOMEGA
-        print 'sum(beam)', numpy.nansum(beam)
-        print 'sum(beamsky)', numpy.nansum(beamsky)
+        print(('sum(beam)', numpy.nansum(beam)))
+        print(('sum(beamsky)', numpy.nansum(beamsky)))
         beamsky_sum = numpy.nansum(beamsky)
         beam_sum = numpy.nansum(beam)
         beam_dOMEGA_sum = numpy.nansum(beam_dOMEGA)
         Tant = numpy.nansum(beamsky) / numpy.nansum(beam)
-        print 'Tant=sum(beamsky)/sum(beam)=', Tant
+        print(('Tant=sum(beamsky)/sum(beam)=', Tant))
 
         if pol == 'XX':
             beamsky_sum_XX = beamsky_sum
@@ -487,11 +487,11 @@ def add_sources(fig, ax1, ax2, obstime=None, az_grid=None, za_grid=None, beamsky
     obstime.delta_ut1_utc = 0
     lst = obstime.sidereal_time(kind='mean').hour
 
-    print "------------------------------"
-    print "Adding sources for lst=%.2f [hours] , coordinates = (%.4f,%.4f) [deg]:" % (lst,
+    print("------------------------------")
+    print(("Adding sources for lst=%.2f [hours] , coordinates = (%.4f,%.4f) [deg]:" % (lst,
                                                                                       config.MWAPOS.longitude.deg,
-                                                                                      config.MWAPOS.latitude.deg)
-    print "------------------------------"
+                                                                                      config.MWAPOS.latitude.deg)))
+    print("------------------------------")
     # add text for sources
     # lst=get_LST(gps)
 
@@ -536,13 +536,13 @@ def add_sources(fig, ax1, ax2, obstime=None, az_grid=None, za_grid=None, beamsky
             max_beam_x = max_beam_y
             max_beam_y = tmp
 
-            print "MAX(beam) = %.2f at (x,y) = (%d,%d)" % (max_beam, max_beam_x, max_beam_y)
+            print(("MAX(beam) = %.2f at (x,y) = (%d,%d)" % (max_beam, max_beam_x, max_beam_y)))
 
         fstring = "%s : (%s,%s) -> (%.4f,%.4f) [deg] -> (az,za) = (%.4f,%.4f) [deg] -> (x,y) = (%d,%d)"
         params = (source, sources[source][1], sources[source][2], RA, Dec, az, za, x_best, y_best)
-        print fstring % params
+        print((fstring % params))
 
-    print "------------------------------"
+    print("------------------------------")
 
 
 def plot_beamsky(beamsky, frequency, textlabel, filename, extension,
@@ -566,7 +566,7 @@ def plot_beamsky(beamsky, frequency, textlabel, filename, extension,
     ax2.set_theta_direction(-1)
     ax2.patch.set_alpha(0.0)
     ax2.tick_params(color='0.5', labelcolor='0.5')
-    for spine in ax2.spines.values():
+    for spine in list(ax2.spines.values()):
         spine.set_edgecolor('0.5')
     ax2.grid(which='major', color='0.5')
 
@@ -591,7 +591,7 @@ def plot_beamsky(beamsky, frequency, textlabel, filename, extension,
         full_filename = directory + '/' + filename
     try:
         fig.savefig(full_filename + '.' + extension)  # transparent=True if we  want transparent png
-    except RuntimeError, err:
+    except RuntimeError as err:
         logger.error('Error saving figure: %s\n' % err)
         return None
 
@@ -599,7 +599,7 @@ def plot_beamsky(beamsky, frequency, textlabel, filename, extension,
     full_filename = filename + '.fits'
     if directory is not None:
         full_filename = directory + '/' + filename + '.fits'
-    print "Filename2 = %s" % filename
+    print(("Filename2 = %s" % filename))
     try:
         hdu = pyfits.PrimaryHDU()
 
@@ -624,8 +624,8 @@ def plot_beamsky(beamsky, frequency, textlabel, filename, extension,
 
         hdulist = pyfits.HDUList([hdu])
         hdulist.writeto(full_filename, clobber=True)
-        print "Saved output image to file %s" % full_filename
-    except RuntimeError, err:
+        print(("Saved output image to file %s" % full_filename))
+    except RuntimeError as err:
         logger.error('Error saving figure: %s\n' % err)
         return None
 

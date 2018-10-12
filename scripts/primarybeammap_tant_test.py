@@ -87,7 +87,7 @@ def main():
     if options.frequency is not None:
         if (',' in options.frequency):
             try:
-                frequency = map(float, options.frequency.split(','))
+                frequency = list(map(float, options.frequency.split(',')))
             except ValueError:
                 logger.error("Could not parse frequency %s\n" % options.frequency)
                 sys.exit(1)
@@ -102,7 +102,7 @@ def main():
     if options.channel is not None:
         if (',' in options.channel):
             try:
-                channel = map(float, options.channel.split(','))
+                channel = list(map(float, options.channel.split(',')))
             except ValueError:
                 logger.error("Could not parse channel %s\n" % options.channel)
                 sys.exit(1)
@@ -118,7 +118,7 @@ def main():
     if options.delays is not None:
         try:
             if (',' in options.delays):
-                delays = map(int, options.delays.split(','))
+                delays = list(map(int, options.delays.split(',')))
             else:
                 delays = 16 * [int(options.delays)]
         except ValueError:
@@ -157,7 +157,7 @@ def main():
     frequency = numpy.array(frequency) * 1e6  # Convert to Hz
 
     for freq in frequency:
-        print 'frequency', freq
+        print('frequency', freq)
         result = make_primarybeammap(gps, delays, freq,
                                      model=model,
                                      plottype=plottype,
@@ -165,7 +165,7 @@ def main():
                                      resolution=options.size,
                                      directory=options.dir)
         if (result is not None):
-            print "Wrote %s" % result
+            print("Wrote %s" % result)
 
 
 if __name__ == "__main__":

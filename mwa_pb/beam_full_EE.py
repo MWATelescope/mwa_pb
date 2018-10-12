@@ -43,8 +43,8 @@ from scipy.special import lpmv  # associated Legendre function
 from astropy.io import fits
 from scipy.interpolate import RegularGridInterpolator
 
-import config
-import beam_tools
+from . import config
+from . import beam_tools
 
 logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger(__name__)  # default logger level is WARNING
@@ -93,7 +93,7 @@ class ApertureArray(object):
         logger.debug("H5 file (%s) version = %s" % (h5filepath, self.h5_file_version))
 
         # Find available frequencies in h5 file
-        freqs = np.array([int(x[3:]) for x in self.h5f.keys() if 'X1_' in x])
+        freqs = np.array([int(x[3:]) for x in list(self.h5f.keys()) if 'X1_' in x])
         freqs.sort()
 
         # find the nearest freq lookup table
@@ -528,7 +528,7 @@ class Beam(object):
             # calculate phi-dependent component ( phi_comp ), but only for each unique M  (!!)
             # make sure data is stored as a contiguous array	to reduce cache misses
             # (should be the case automatically, but just to be sure)
-            phi_comp = np.ascontiguousarray(np.exp(1.0j * np.outer(phi_unique, range(-nmax, nmax + 1))))
+            phi_comp = np.ascontiguousarray(np.exp(1.0j * np.outer(phi_unique, list(range(-nmax, nmax + 1)))))
             # determine theta-dependent components
             # nomenclature:
             # T and P are the sky polarisations theta and phi

@@ -135,11 +135,11 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
 
-    print "######################################################"
-    print "PARAMETERS:"
-    print "######################################################"
-    print "min_gain = %.4f" % (options.min_gain)
-    print "######################################################"
+    print("######################################################")
+    print("PARAMETERS:")
+    print("######################################################")
+    print("min_gain = %.4f" % (options.min_gain))
+    print("######################################################")
 
     model = options.model
     if model not in ['analytic', 'advanced', 'full_EE', 'full_EE_AAVS05']:
@@ -249,4 +249,4 @@ if __name__ == '__main__':
                                  'az': az,
                                  'project': options.project})
 
-    print "Script saved to file %s" % (outfile_name)
+    print("Script saved to file %s" % (outfile_name))

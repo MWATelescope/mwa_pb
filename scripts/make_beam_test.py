@@ -100,15 +100,15 @@ def main():
         if options.analytic_model:
             options.model = '2014'
 
-    print "###########################################"
-    print "PARAMETERS:"
-    print "###########################################"
-    print "Filename = %s" % options.filename
-    print "obsid    = %d" % options.obsid
-    print "model    = %s" % options.model
-    print "metafits = %s" % options.metafits
-    print "delays   = %s" % options.delays
-    print "###########################################"
+    print("###########################################")
+    print("PARAMETERS:")
+    print("###########################################")
+    print("Filename = %s" % options.filename)
+    print("obsid    = %d" % options.obsid)
+    print("model    = %s" % options.model)
+    print("metafits = %s" % options.metafits)
+    print("delays   = %s" % options.delays)
+    print("###########################################")
 
     if options.model not in ['analytic', 'advanced', 'full_EE', 'full_EE_AAVS05',
                              'FEE', 'Full_EE', '2016', '2015', '2014']:
@@ -126,23 +126,23 @@ def main():
     if options.delays is not None:
         try:
             delays = [int(x) for x in options.delays.split(',')]
-        except Exception, e:
+        except Exception as e:
             logger.error('Unable to parse beamformer delays %s: %s' % (options.delays, e))
             sys.exit(1)
 
     if options.metafits is not None:
         try:
             f = pyfits.open(options.metafits)
-        except Exception, e:
+        except Exception as e:
             logger.error('Unable to open FITS file %s: %s' % (options.metafits, e))
             sys.exit(1)
-        if 'DELAYS' not in f[0].header.keys():
+        if 'DELAYS' not in list(f[0].header.keys()):
             logger.error('Cannot find DELAYS in %s' % options.metafits)
             sys.exit(1)
         delays = f[0].header['DELAYS']
         try:
             delays = [int(x) for x in delays.split(',')]
-        except Exception, e:
+        except Exception as e:
             logger.error('Unable to parse beamformer delays %s: %s' % (delays, e))
             sys.exit(1)
 
@@ -164,10 +164,10 @@ def main():
 
     # find delays by gridpoint if given as parameter:
     if options.gridpoint >= 0:
-        print "Getting delays for gridpoint = %d" % (options.gridpoint)
+        print("Getting delays for gridpoint = %d" % (options.gridpoint))
         delays_xy = mwa_sweet_spots.get_delays(options.gridpoint)
         delays = delays_xy[0]
-        print "Delays for gridpoint = %d are : %s" % (options.gridpoint, delays)
+        print("Delays for gridpoint = %d are : %s" % (options.gridpoint, delays))
 
     if delays is None:
         logger.error("Must provide delays, or a metafits file.")

@@ -8,8 +8,8 @@ import astropy.wcs as pywcs
 
 import numpy
 
-import config
-import primary_beam
+from . import config
+from . import primary_beam
 
 import astropy
 from astropy.time import Time
@@ -56,7 +56,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
 
     try:
         f = pyfits.open(filename)
-    except IOError, err:
+    except IOError as err:
         logger.error('Unable to open %s for reading\n%s', filename, err)
         return None
     if isinstance(ext, int):
@@ -64,7 +64,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
             logger.error('FITS file %s does not have extension %d' % (filename, ext))
             return None
     elif isinstance(ext, str):
-        for extnum in xrange(len(f)):
+        for extnum in range(len(f)):
             if ext.upper() == f[extnum].name:
                 logger.info('Found matching extension %s[%d] = %s' % (filename, extnum, ext))
                 ext = extnum
@@ -120,7 +120,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
     FF = ff * numpy.ones(Xflat.shape)
     if naxes >= 4:
         Tostack = [Xflat, Yflat, FF]
-        for i in xrange(3, naxes):
+        for i in range(3, naxes):
             Tostack.append(numpy.ones(Xflat.shape))
     else:
         Tostack = [Xflat, Yflat]
@@ -131,7 +131,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
         # The second argument is "origin" -- in this case we're declaring we
         # have 1-based (Fortran-like) coordinates.
         sky = wcs.wcs_pix2world(pixcrd, 1)
-    except Exception, e:
+    except Exception as e:
         logger.error('Problem converting to WCS: %s' % e)
         return None
 
@@ -146,7 +146,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
         freq = freq[numpy.isfinite(freq)][0]
     else:
         freq = freq_mhz * 1000000
-        print "Frequency set to %.2f Hz" % freq
+        print(("Frequency set to %.2f Hz" % freq))
 
     if nfreq > 1:
         frequencies = numpy.arange(nfreq) * df + freq
@@ -165,7 +165,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
         if gps > 0:
             time = Time(gps, format='gps', scale='utc')
             d = time.fits
-            print "gps=%d -> d=%s" % (gps, d)
+            print(("gps=%d -> d=%s" % (gps, d)))
         else:
             logger.error('GPS time not provided either -> cannot continue')
             return None
@@ -190,7 +190,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
 
     tempY = numpy.zeros(f[ext].data.shape)  # copy to prevent rY from overwriting rX in the loop below
     rX, rY, J = None, None, None
-    for freqindex in xrange(len(frequencies)):
+    for freqindex in range(len(frequencies)):
         logger.debug(
             'Time (get beam): %s , frequency = %.2f' % (datetime.datetime.now().time(), frequencies[freqindex]))
         try:
@@ -239,8 +239,8 @@ def make_beam(filename, ext=0, delays=None, jones=False,
                                                        delays=delays,
                                                        jones=True)
 
-        except Exception, e:
-            print e
+        except Exception as e:
+            print(e)
             logger.error('Problem creating primary beam: %s' % e)
             return None
         logger.info('Created primary beam for %.2f MHz and delays=%s' %

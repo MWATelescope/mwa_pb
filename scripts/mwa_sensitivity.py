@@ -78,13 +78,13 @@ def calculate_sensitivity(freq, delays, gps, trcv_type, T_rcv, size, dirname, mo
                           inttime=120,
                           bandwidth=1280000):
     freq_mhz = freq / 1e6
-    print 'frequency=%.2f -> delays=%s' % (freq, delays)
+    print('frequency=%.2f -> delays=%s' % (freq, delays))
 
     # if trcv_type',default='trcv_from_skymodel_with_err
     if trcv_type != "value":
         if trcv_type == "trcv_from_skymodel_with_err":
             T_rcv = trcv_from_skymodel_with_err(freq_mhz)
-            print "T_rcv calculated from trcv_from_skymodel_with_err = %.2f K" % (T_rcv)
+            print("T_rcv calculated from trcv_from_skymodel_with_err = %.2f K" % (T_rcv))
 
     result = make_primarybeammap(gps, delays, freq,
                                  model=model,
@@ -122,22 +122,22 @@ def calculate_sensitivity(freq, delays, gps, trcv_type, T_rcv, size, dirname, mo
     noise_XX = sefd_XX / math.sqrt(bandwidth * inttime * antnum * (antnum - 1))
     noise_YY = sefd_YY / math.sqrt(bandwidth * inttime * antnum * (antnum - 1))
 
-    print "%.2f Hz :" % (freq)
+    print("%.2f Hz :" % (freq))
 
     lstring = "\t\tXX (%.2f MHz) : T_ant_XX = %.2f  = (%.8f / %.8f) , beam(%.4f,%.4f)=%.8f , gain=%.8f , aeff=%.8f, "
     lstring += "sensitivity (A/T) = %.20f -> SEFD_XX = %.2f Jy -> noise_XX = %.4f Jy"
     params = (freq_mhz, Tant_XX, beamsky_sum_XX, beam_sum_XX, pointing_az_deg, pointing_za_deg, beams['XX'], gain_XX,
               aeff_XX, sens_XX, sefd_XX, noise_XX)
-    print lstring % params
+    print(lstring % params)
 
     lstring = "\t\tYY (%.2f MHz) : T_ant_YY = %.2f  = (%.8f / %.8f) , beam(%.4f,%.4f)=%.8f , gain=%.8f , aeff=%.8f, "
     lstring += "sensitivity (A/T) = %.20f -> SEFD_YY = %.2f Jy -> noise_YY = %.4f Jy"
     params = (freq_mhz, Tant_YY, beamsky_sum_YY, beam_sum_YY, pointing_az_deg, pointing_za_deg, beams['YY'], gain_YY,
               aeff_YY, sens_YY, sefd_YY, noise_YY)
-    print lstring % params
+    print(lstring % params)
 
-    print "Noise expected on XX images = %.4f Jy" % noise_XX
-    print "Noise expected on YY images = %.4f Jy" % noise_YY
+    print("Noise expected on XX images = %.4f Jy" % noise_XX)
+    print("Noise expected on YY images = %.4f Jy" % noise_YY)
 
     return (aeff_XX, T_sys_XX, sens_XX, sefd_XX, noise_XX, aeff_YY, T_sys_YY, sens_YY, sefd_YY, noise_YY)
 
@@ -228,7 +228,7 @@ def main():
     if options.frequency is not None:
         if (',' in options.frequency):
             try:
-                frequency = map(float, options.frequency.split(','))
+                frequency = list(map(float, options.frequency.split(',')))
             except ValueError:
                 logger.error("Could not parse frequency %s\n" % options.frequency)
                 sys.exit(1)
@@ -243,7 +243,7 @@ def main():
     if options.channel is not None:
         if (',' in options.channel):
             try:
-                channel = map(float, options.channel.split(','))
+                channel = list(map(float, options.channel.split(',')))
             except ValueError:
                 logger.error("Could not parse channel %s\n" % options.channel)
                 sys.exit(1)
@@ -259,24 +259,24 @@ def main():
     if options.metafits is not None:
         try:
             f = pyfits.open(options.metafits)
-        except Exception, e:
+        except Exception as e:
             logger.error('Unable to open FITS file %s: %s' % (options.metafits, e))
             sys.exit(1)
-        if 'DELAYS' not in f[0].header.keys():
+        if 'DELAYS' not in list(f[0].header.keys()):
             logger.error('Cannot find DELAYS in %s' % options.metafits)
             sys.exit(1)
         options.delays = f[0].header['DELAYS']
         try:
             # options.delays=[int(x) for x in options.delays.split(',')]
-            print "delays from metafits file %s are %s" % (options.metafits, options.delays)
-        except Exception, e:
+            print("delays from metafits file %s are %s" % (options.metafits, options.delays))
+        except Exception as e:
             logger.error('Unable to parse beamformer delays %s: %s' % (options.delays, e))
             sys.exit(1)
 
     if options.delays is not None:
         try:
             if (',' in options.delays):
-                delays = map(int, options.delays.split(','))
+                delays = list(map(int, options.delays.split(',')))
             else:
                 delays = 16 * [int(options.delays)]
         except ValueError:
@@ -313,13 +313,13 @@ def main():
         logger.error("Plot type %s not found\n" % plottype)
         sys.exit(1)
 
-    print "########################################"
-    print "PARAMETERS :"
-    print "########################################"
-    print "gridpoint  = %d" % (options.gridpoint)
-    print "use db     = %s" % (options.use_db)
-    print "T_rcv type = %s" % (options.trcv_type)
-    print "########################################"
+    print("########################################")
+    print("PARAMETERS :")
+    print("########################################")
+    print("gridpoint  = %d" % (options.gridpoint))
+    print("use db     = %s" % (options.use_db))
+    print("T_rcv type = %s" % (options.trcv_type))
+    print("########################################")
 
     #    if (datetimestring is None):
     #        if (datestring is not None and timestring is not None):
@@ -342,7 +342,7 @@ def main():
     gridpoint = -1
     if options.use_db:
         if options.gps > 0:
-            print "INFO : Reading information from MWA metadata web service ..."
+            print("INFO : Reading information from MWA metadata web service ...")
             obs = metadata.get_observation(obsid=options.gps)
             delays = obs['rfstreams']['0']['delays']
             gridpoint = obs['metadata']['gridpoint_number']
@@ -351,14 +351,14 @@ def main():
             gridpoint = options.gridpoint
             delays_xy = mwa_sweet_spots.get_delays(gridpoint)
             delays = delays_xy[0]
-        print "Using of MWA database is not required"
+        print("Using of MWA database is not required")
 
-    print "Pointing information for obsid=%d" % (int(options.gps))
-    print "gridpoint = %d" % (gridpoint)
-    print "delays    = %s" % (delays)
-    print "Pointing direction to source = (az,za) = (%.8f,%.8f) [deg]" % (options.pointing_az_deg,
-                                                                          options.pointing_za_deg)
-    print "T_rcv     = %.2f K" % (options.t_rcv)
+    print("Pointing information for obsid=%d" % (int(options.gps)))
+    print("gridpoint = %d" % (gridpoint))
+    print("delays    = %s" % (delays))
+    print("Pointing direction to source = (az,za) = (%.8f,%.8f) [deg]" % (options.pointing_az_deg,
+                                                                          options.pointing_za_deg))
+    print("T_rcv     = %.2f K" % (options.t_rcv))
 
     if (len(delays) < 16):
         logger.error("Must supply 1 or 16 delays\n")

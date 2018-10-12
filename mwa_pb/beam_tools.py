@@ -202,7 +202,7 @@ def plotVisResponse(j, freq, filebase, title, pix_per_deg, gridded=False):
     vis = np.abs(vis)
     data = {'XX': vis[0, 0], 'YY': vis[1, 1],
             'XY': vis[0, 1], 'YX': vis[1, 0]}
-    for key, val in data.iteritems():
+    for key, val in list(data.items()):
         my_max = np.max(val, axis=1)  # Max za for each az
         max_idx = np.argmax(my_max)  # Find az index
         if gridded:  # show cut
