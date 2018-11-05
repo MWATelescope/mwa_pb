@@ -459,10 +459,10 @@ def makeUnpolInstrumentalResponse(j1, j2):
     """
     result = numpy.empty_like(j1)
 
-    result[:, :, 0, 0] = j1[:, :, 0, 0] * j2[:, :, 0, 0].conjugate() + j1[:, :, 0, 1] * j2[:, :, 0, 1].conjugate()
-    result[:, :, 1, 1] = j1[:, :, 1, 0] * j2[:, :, 1, 0].conjugate() + j1[:, :, 1, 1] * j2[:, :, 1, 1].conjugate()
-    result[:, :, 0, 1] = j1[:, :, 0, 0] * j2[:, :, 1, 0].conjugate() + j1[:, :, 0, 1] * j2[:, :, 1, 1].conjugate()
-    result[:, :, 1, 0] = j1[:, :, 1, 0] * j2[:, :, 0, 0].conjugate() + j1[:, :, 1, 1] * j2[:, :, 0, 1].conjugate()
+    result[..., 0, 0] = j1[..., 0, 0] * j2[..., 0, 0].conjugate() + j1[..., 0, 1] * j2[..., 0, 1].conjugate()
+    result[..., 1, 1] = j1[..., 1, 0] * j2[..., 1, 0].conjugate() + j1[..., 1, 1] * j2[..., 1, 1].conjugate()
+    result[..., 0, 1] = j1[..., 0, 0] * j2[..., 1, 0].conjugate() + j1[..., 0, 1] * j2[..., 1, 1].conjugate()
+    result[..., 1, 0] = j1[..., 1, 0] * j2[..., 0, 0].conjugate() + j1[..., 1, 1] * j2[..., 0, 1].conjugate()
     return result
 
 
@@ -558,6 +558,8 @@ def plotVisResponse(j, freq, za):
     """
     import matplotlib.pyplot as plt
 
+    if not len(j.shape) == 4:
+        raise ValueError, "plotVisResponse expects a matrix of dimensions [za][az][2][2]"
     vis = makeUnpolInstrumentalResponse(j, j)
     plt.imshow(numpy.abs(vis[:, :, 0, 0]))
     plt.title('MWA ' + str(freq / 1e6) + 'MHz XX mag ZA=' + str(za))

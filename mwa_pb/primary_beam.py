@@ -59,12 +59,7 @@ def MWA_Tile_full_EE(za, az, freq,
 
     # Use swapaxis to place jones matrices in last 2 dimensions
     # insead of first 2 dims.
-    if len(j.shape) == 4:
-        j = numpy.swapaxes(numpy.swapaxes(j, 0, 2), 1, 3)
-    elif len(j.shape) == 3:  # 1-D
-        j = numpy.swapaxes(numpy.swapaxes(j, 1, 2), 0, 1)
-    else:  # single value
-        pass
+    j = numpy.swapaxes(numpy.swapaxes(j, 0, -2), 1, -1)
 
     if jones:
         return j
@@ -72,9 +67,9 @@ def MWA_Tile_full_EE(za, az, freq,
     # Use mwa_tile makeUnpolInstrumentalResponse because we have swapped axes
     vis = mwa_tile.makeUnpolInstrumentalResponse(j, j)
     if not power:
-        return (numpy.sqrt(vis[:, :, 0, 0].real), numpy.sqrt(vis[:, :, 1, 1].real))
+        return (numpy.sqrt(vis[..., 0, 0].real), numpy.sqrt(vis[..., 1, 1].real))
     else:
-        return (vis[:, :, 0, 0].real, vis[:, :, 1, 1].real)
+        return (vis[..., 0, 0].real, vis[..., 1, 1].real)
 
 
 #########
