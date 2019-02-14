@@ -40,7 +40,8 @@ def get_best_gridpoints(gps_start,
                         channel=145,
                         verb_level=1,
                         duration=3600,
-                        step=120):
+                        step=120,
+                        min_elevation=50.00):
     frequency = channel * 1.28
 
     stime = Time(gps_start, format='gps', scale='utc')
@@ -76,8 +77,8 @@ def get_best_gridpoints(gps_start,
         obs_source.obstime = t
         obs_source_altaz = obs_source.transform_to('altaz')
 
-        if obs_source_altaz.alt.deg < 15.0:
-            logger.debug("Source below pointing horizon at this time, skip this timestep.")
+        if obs_source_altaz.alt.deg < min_elevation :
+            logger.debug("Source at %.2f [deg] below minimum required elevation = %.2f [deg]  at this time, skip this timestep." % (obs_source_altaz.alt.deg,min_elevation))
             continue  # Source below pointing horizon at this time, skip this timestep.
 
         avoid_source.obstime = t
@@ -198,7 +199,8 @@ def get_best_gridpoints_supress_sun(gps_start,
                                     channel=145,
                                     verb_level=1,
                                     duration=3600,
-                                    step=120):
+                                    step=120,
+                                    min_elevation=50.00):
     t = Time(gps_start, format='gps', scale='utc')
     sunpos = get_sun(t)
     return get_best_gridpoints(gps_start=gps_start,
@@ -212,7 +214,8 @@ def get_best_gridpoints_supress_sun(gps_start,
                                channel=channel,
                                verb_level=verb_level,
                                duration=duration,
-                               step=step)
+                               step=step,
+                               min_elevation=min_elevation)
 
 
 def get_sun_elevation(gps_start=None):

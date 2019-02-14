@@ -48,6 +48,7 @@ if __name__ == '__main__':
                       help='Individual observation length in seconds, default %default',
                       type="int")
     parser.add_option('--duration',
+                      '--interval',
                       dest='duration',
                       default=36000,
                       help='Observing duration in seconds, default %default',
@@ -132,6 +133,12 @@ if __name__ == '__main__':
                       dest="verbose",
                       default=False,
                       help="Increase verbosity of output")
+                      
+    parser.add_option('--min_elevation','--min_elev','--min_el','--min_alt',
+                      dest='min_elevation',
+                      default=30,
+                      help='Minimum elevation to observe in all-sky scan [default %default]',
+                      type=float)
 
     (options, args) = parser.parse_args()
 
@@ -139,6 +146,7 @@ if __name__ == '__main__':
     print "PARAMETERS:"
     print "######################################################"
     print "min_gain = %.4f" % (options.min_gain)
+    print "min_elevation = %.2f [deg]" % (options.min_elevation)
     print "######################################################"
 
     model = options.model
@@ -173,7 +181,8 @@ if __name__ == '__main__':
                                                     channel=options.channel,
                                                     verb_level=1,
                                                     duration=options.duration,
-                                                    step=step)
+                                                    step=step,
+                                                    min_elevation=options.min_elevation)
     else:
         tracklist = get_best_gridpoints(gps_start=start_time.gps + 16,  # Add 16 to allow for mode change
                                         obs_source_ra_deg=options.obs_source_ra_deg,
@@ -186,7 +195,8 @@ if __name__ == '__main__':
                                         channel=options.channel,
                                         verb_level=1,
                                         duration=options.duration,
-                                        step=step)
+                                        step=step,
+                                        min_elevation=options.min_elevation)
 
     start_time.location = config.MWAPOS
 
