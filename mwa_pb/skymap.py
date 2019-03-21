@@ -23,7 +23,12 @@ if 'matplotlib.backends' not in sys.modules:
     matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
-from mpl_toolkits.basemap import Basemap
+try:
+    from mpl_toolkits.basemap import Basemap
+except ImportError:
+    print "Basemap not found - install it with:"
+    print "sudo apt-get install libgeos-3.6.2 libgeos-c1v5 libgeos-dev"
+    print "pip install --user git+https://github.com/matplotlib/basemap.git"
 
 from PIL import Image
 
