@@ -15,7 +15,8 @@ setup(
            'scripts/calc_jones.py',
            'scripts/make_beam_test.py',
            'scripts/mwa_sensitivity.py',
+           'scripts/plot_skymap.py',
            'scripts/primarybeammap_tant_test.py',
            'scripts/track_and_suppress.py'],
-  install_requires=["numpy", "astropy", "matplotlib", "scipy", "ephem", "h5py"]
+  install_requires=["numpy", "astropy", "matplotlib", "basemap", "scipy", "ephem", "h5py", "Pillow"]
 )
