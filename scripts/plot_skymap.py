@@ -23,7 +23,6 @@ if __name__ == "__main__":
     parser.add_option('-o', '--out', dest='out', default='mwasky.png',
                       help='Name for output [default=%default]')
     parser.add_option('-s', '--obsid', dest='obsid', default=None,
-                      type='int',
                       help='Observation ID to process [default=most recent]')
     parser.add_option('-v', '--viewtime', dest='viewtime', default=None,
                       type='int',

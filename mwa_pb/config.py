@@ -33,7 +33,12 @@ Jmatrix = os.path.join(datadir, 'Jmatrix.fits')
 MEAS_DELAYS = os.path.join(datadir, 'meas_delays.txt')
 MEAS_GAINS = os.path.join(datadir, 'meas_gain_db.txt')
 
+# Hardcode the paths of the data files used by skymap.py
+CONSTELLATION_FILE = os.path.join(datadir, 'constellationship.fab')
+GLEAMCAT_FILE = os.path.join(datadir, 'G4Jy_catalogue_allEGCcolumns.fits')
+HIP_CONSTELLATION_FILE = os.path.join(datadir, 'HIP_constellations.dat')
+
 # Haslam image:
-radio_image = os.path.join(datadir, 'radio408.RaDec.fits')
+RADIO_IMAGE_FILE = os.path.join(datadir, 'radio408.RaDec.fits')
 
 MWAPOS = EarthLocation.from_geodetic(lon="116:40:14.93", lat="-26:42:11.95", height=377.8)

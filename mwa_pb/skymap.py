@@ -15,7 +15,7 @@ import astropy
 from astropy.table import Table
 from astropy.io import fits
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, EarthLocation
+from astropy.coordinates import SkyCoord
 
 import matplotlib
 
@@ -26,6 +26,7 @@ import matplotlib.pyplot as plt
 try:
     from mpl_toolkits.basemap import Basemap
 except ImportError:
+    Basemap = None
     print "Basemap not found - install it with:"
     print "    sudo apt-get install libgeos-3.6.2 libgeos-c1v5 libgeos-dev"
     print "    pip install --user git+https://github.com/matplotlib/basemap.git"
@@ -35,20 +36,14 @@ from PIL import Image
 
 import ephem
 
-import mwa_pb.primarybeammap as primarybeammap
+import config
+import primarybeammap as primarybeammap
 
 logging.basicConfig()
 DEFAULTLOGGER = logging.getLogger()
 
 XMAS = False
 
-try:
-    import mwaconfig
-    BASEPATH = mwaconfig.mandc.datapath
-except (ImportError, AttributeError):
-    BASEPATH = '/home/mwa/MandC/mwatools/data'
-
-MWAPOS = EarthLocation.from_geodetic(lon="116:40:14.93", lat="-26:42:11.95", height=377.8)
 
 SCALE = 1
 FIGSIZE = 8
@@ -225,7 +220,7 @@ class SkyData(object):
         self.valid = True
         # read the constellation data
         try:
-            fi = open(os.path.join(BASEPATH, 'constellationship.fab'))
+            fi = open(config.CONSTELLATION_FILE)
             self.constellations = {}
             for l in fi.readlines():
                 d = l.split()
@@ -240,7 +235,7 @@ class SkyData(object):
 
         # Read the GLEAM source list
         try:
-            fi = fits.open(os.path.join(BASEPATH, 'G4Jy_catalogue_allEGCcolumns.fits'))
+            fi = fits.open(config.GLEAMCAT_FILE)
             self.gleamcat = []
             for i in range(len(fi[1].data.Name)):
                 name, ra, dec, flux = fi[1].data.Name[i], fi[1].data.RAJ2000[i], fi[1].data.DEJ2000[i], fi[1].data.int_flux_151[i]
@@ -253,7 +248,7 @@ class SkyData(object):
 
         # read the HIP data on those stars
         try:
-            self.hip = Table.read(os.path.join(BASEPATH, 'HIP_constellations.dat'), format='ascii.commented_header')
+            self.hip = Table.read(config.HIP_CONSTELLATION_FILE, format='ascii.commented_header')
         except:
             logger.error('Could not find star data')
             self.valid = False
@@ -268,7 +263,7 @@ class SkyData(object):
                        ephem.Saturn:[50, 'skyblue', 'Saturn']}
 
         try:
-            fname = os.path.join(BASEPATH, 'radio408.RaDec.fits')
+            fname = os.path.join(config.RADIO_IMAGE_FILE)
             self.radio_image = fits.open(fname)
 
             self.basemap = self.radio_image
@@ -323,13 +318,13 @@ def plot_MWAconstellations(outfile=None,
         viewtime = Time(viewgps, format='gps', scale='utc')
 
     viewtime.delta_ut1_utc = 0  # We don't care about IERS tables and high precision answers
-    LST_hours = viewtime.sidereal_time(kind='apparent', longitude=MWAPOS.longitude)
+    LST_hours = viewtime.sidereal_time(kind='apparent', longitude=config.MWAPOS.longitude)
 
     mapzenith = SkyCoord(ra=skydata.skymapRA,
                          dec=skydata.skymapDec,
                          equinox='J2000',
                          unit=(astropy.units.deg, astropy.units.deg))
-    mapzenith.location = MWAPOS
+    mapzenith.location = config.MWAPOS
     mapzenith.obstime = viewtime
     altaz = mapzenith.transform_to('altaz')
     Az, Alt = altaz.az.deg, altaz.alt.deg
@@ -337,7 +332,7 @@ def plot_MWAconstellations(outfile=None,
     fig = plt.figure(figsize=(FIGSIZE * plotscale, FIGSIZE * plotscale), dpi=DPI)
     ax1 = fig.add_subplot(1, 1, 1)
 
-    bmap = Basemap(projection='ortho', lat_0=MWAPOS.latitude.deg, lon_0=LST_hours.hour * 15 - 360, ax=ax1)
+    bmap = Basemap(projection='ortho', lat_0=config.MWAPOS.latitude.deg, lon_0=LST_hours.hour * 15 - 360, ax=ax1)
     nx = len(skydata.skymapra)
     ny = len(skydata.skymapdec)
 
@@ -405,7 +400,7 @@ def plot_MWAconstellations(outfile=None,
     else:
         constellation = ["N/A", "N/A"]
 
-    X0, Y0 = bmap(LST_hours.hour * 15 - 360, MWAPOS.latitude.deg)
+    X0, Y0 = bmap(LST_hours.hour * 15 - 360, config.MWAPOS.latitude.deg)
 
     if constellations:
         # plot the constellations
@@ -465,9 +460,9 @@ def plot_MWAconstellations(outfile=None,
     observer = ephem.Observer()
     # make sure no refraction is included
     observer.pressure = 0
-    observer.long = MWAPOS.longitude.radian
-    observer.lat = MWAPOS.latitude.radian
-    observer.elevation = MWAPOS.height.value
+    observer.long = config.MWAPOS.longitude.radian
+    observer.lat = config.MWAPOS.latitude.radian
+    observer.elevation = config.MWAPOS.height.value
     observer.date = viewtime.datetime.strftime('%Y/%m/%d %H:%M:%S')
 
     # plot the bodies
