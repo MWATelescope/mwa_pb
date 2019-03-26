@@ -22,6 +22,20 @@ import mwa_tile
 logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger(__name__)  # default logger level is WARNING
 
+# Constants
+C = 2.998e8
+
+# dipole position within the tile
+DIPOLE_NORTH = config.DIPOLE_SEPARATION * numpy.array([1.5, 1.5, 1.5, 1.5,
+                                                       0.5, 0.5, 0.5, 0.5,
+                                                       -0.5, -0.5, -0.5, -0.5,
+                                                       -1.5, -1.5, -1.5, -1.5])
+DIPOLE_EAST = config.DIPOLE_SEPARATION * numpy.array([-1.5, -0.5, 0.5, 1.5,
+                                                      -1.5, -0.5, 0.5, 1.5,
+                                                      -1.5, -0.5, 0.5, 1.5,
+                                                      -1.5, -0.5, 0.5, 1.5])
+DIPOLE_Z = config.DIPOLE_SEPARATION * numpy.zeros(DIPOLE_NORTH.shape)
+
 
 #########
 #########
@@ -46,7 +60,7 @@ def MWA_Tile_full_EE(za, az, freq,
     az - azimuth angles (radians), north through east.
     za - zenith angles (radian)
     """
-    tile = beam_full_EE.ApertureArray(config.h5file, freq)
+    tile = beam_full_EE.get_AA_Cached(target_freq_Hz=freq)
     mybeam = beam_full_EE.Beam(tile, delays, amps=numpy.ones([2, 16]))  # calling with amplitudes=1 every time - otherwise they get overwritten !!!
     if interp:
         j = mybeam.get_interp_response(az, za, pixels_per_deg)
@@ -104,10 +118,8 @@ def MWA_Tile_advanced(za, az, freq=100.0e6, delays=None, zenithnorm=None, power=
             return None
     assert delays.shape == (2, 16), "Delays %s have unexpected shape %s" % (delays, delays.shape)
 
-    d = mwa_tile.Dipole(atype='lookup')
-
     logger.debug("Delays: " + str(delays))
-    tile = mwa_tile.ApertureArray(dipoles=[d] * 16)  # tile of identical dipoles
+    tile = mwa_tile.get_AA_Cached()  # tile of identical dipoles
     j = tile.getResponse(az, za, freq, delays=delays)
     if jones:
         return j
@@ -148,9 +160,8 @@ def MWA_Tile_analytic(za, az,
     theta = za
     phi = az
 
-    c = 2.998e8
     # wavelength in meters
-    lam = c / freq
+    lam = C / freq
 
     if (delays is None):
         delays = 0
@@ -172,38 +183,33 @@ def MWA_Tile_analytic(za, az,
     # direction cosines (relative to zenith) for direction az,za
     projection_east = numpy.sin(theta) * numpy.sin(phi)
     projection_north = numpy.sin(theta) * numpy.cos(phi)
-    projection_z = numpy.cos(theta)
+    # projection_z = numpy.cos(theta)
 
-    # dipole position within the tile
-    dipole_north = dip_sep * numpy.array([1.5, 1.5, 1.5, 1.5,
-                                          0.5, 0.5, 0.5, 0.5, -
-                                          0.5, -0.5, -0.5, -0.5,
-                                          -1.5, -1.5, -1.5, -1.5])
-    dipole_east = dip_sep * numpy.array([-1.5, -0.5, 0.5, 1.5,
-                                         -1.5, -0.5, 0.5, 1.5,
-                                         -1.5, -0.5, 0.5, 1.5,
-                                         -1.5, -0.5, 0.5, 1.5])
-    dipole_z = dip_sep * numpy.zeros(dipole_north.shape)
+    if dip_sep == config.DIPOLE_SEPARATION:
+        dipole_north = DIPOLE_NORTH
+        dipole_east = DIPOLE_EAST
+        # dipole_z = DIPOLE_Z
+    else:
+        # compute dipole position within the tile using a custom dipole separation value
+        dipole_north = dip_sep * numpy.array([1.5, 1.5, 1.5, 1.5,
+                                              0.5, 0.5, 0.5, 0.5,
+                                              -0.5, -0.5, -0.5, -0.5,
+                                              -1.5, -1.5, -1.5, -1.5])
+        dipole_east = dip_sep * numpy.array([-1.5, -0.5, 0.5, 1.5,
+                                             -1.5, -0.5, 0.5, 1.5,
+                                             -1.5, -0.5, 0.5, 1.5,
+                                             -1.5, -0.5, 0.5, 1.5])
+        # dipole_z = dip_sep * numpy.zeros(dipole_north.shape)
 
     # loop over dipoles
     array_factor = 0.0
-
-    non_zero_count = 0
-    for i in xrange(4):
-        for j in xrange(4):
-            k = 4 * j + i
-            # relative dipole phase for a source at (theta,phi)
-            phase = amps[k] * numpy.exp((1j) * 2 * math.pi / lam * (dipole_east[k] * projection_east +
-                                                                    dipole_north[k] * projection_north +
-                                                                    dipole_z[k] * projection_z -
-                                                                    delays[k] * c * delay_int))
-            if amps[k] != 0:
-                non_zero_count = non_zero_count + 1
-            array_factor += phase / 16.0
-            # array_factor+=phase
-
-    # print "non_zero_count = %d" % non_zero_count
-    # array_factor = array_factor / non_zero_count
+    for k in xrange(16):
+        # relative dipole phase for a source at (theta,phi)
+        phase = amps[k] * numpy.exp((1j) * 2 * math.pi / lam * (dipole_east[k] * projection_east
+                                                                + dipole_north[k] * projection_north
+                                                                # + dipole_z[k] * projection_z
+                                                                - delays[k] * C * delay_int))
+        array_factor += phase / 16.0
 
     ground_plane = 2 * numpy.sin(2 * math.pi * dipheight / lam * numpy.cos(theta))
     # make sure we filter out the bottom hemisphere
