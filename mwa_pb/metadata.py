@@ -35,5 +35,8 @@ def getmeta(servicetype='metadata', service='obs', params=None):
 def get_observation(obsid=None):
     """Get an observation structure from the metadata web service, given an obsid.
     """
-    obs = getmeta(servicetype='metadata', service='obs', params={'obs_id': obsid})
+    if obsid is None:
+        obs = getmeta(servicetype='metadata', service='obs')
+    else:
+        obs = getmeta(servicetype='metadata', service='obs', params={'obs_id': obsid})
     return obs
