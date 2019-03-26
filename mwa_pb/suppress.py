@@ -77,7 +77,7 @@ def get_best_gridpoints(gps_start,
         obs_source.obstime = t
         obs_source_altaz = obs_source.transform_to('altaz')
 
-        if obs_source_altaz.alt.deg < min_elevation :
+        if obs_source_altaz.alt.deg < min_elevation:
             logger.debug("Source at %.2f [deg] below minimum required elevation = %.2f [deg]  at this time, skip this timestep." % (obs_source_altaz.alt.deg,min_elevation))
             continue  # Source below pointing horizon at this time, skip this timestep.
 
