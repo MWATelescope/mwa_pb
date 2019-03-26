@@ -79,7 +79,7 @@ logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger('primarybeammap')
 logger.setLevel(logging.WARNING)
 
-radio_image = config.radio_image
+radio_image = config.RADIO_IMAGE_FILE
 
 
 ######################################################################
@@ -282,7 +282,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
     dec_sat = []
     time_sat = []
     if tlelines is not None and len(tlelines) >= 3:
-        satellite_label = tlelines[0].replace('_', '\_').replace('\n', '')
+        satellite_label = tlelines[0].replace('_', r'\_').replace('\n', '')
         satellite = ephem.readtle(tlelines[0],
                                   tlelines[1],
                                   tlelines[2])
@@ -529,7 +529,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
                 icolor = 0
 
     if title is not None:
-        title = title.replace('_', '\_')
+        title = title.replace('_', r'\_')
         textlabel = title + ' ' + textlabel
     if (plothourangle):
         ax2 = ax1.twiny()
