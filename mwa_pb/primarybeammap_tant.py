@@ -27,7 +27,6 @@ from astropy.coordinates import SkyCoord, Angle, AltAz, ICRS
 import config
 import beam_tools
 import primary_beam
-import mwa_tile
 
 EPS = numpy.finfo(numpy.float64).eps  # machine epsilon
 
@@ -43,7 +42,7 @@ logger.setLevel(logging.WARNING)
 # information for the individual sources to label
 # for each, give the name, RA, Dec, color, fontsize, and justification
 # if the last three are omitted they will use the defaults
-sources = {
+SOURCES = {
     'HydA': ['Hyd A', '09:18:05.65', '-12:05:43.9', 'b', 10, 'l'],
     'ForA': ['For A (double)', '03:22:41.52', '-37:12:33.5', defaultcolor, defaultsize, 'l'],
     'PicA': ['Pic A', '05:19:49.73', '-45:46:43.7', 'b', 10, 'l'],
@@ -254,7 +253,7 @@ def get_Haslam(freq, scaling=-2.55):
       RA - RA in degrees (-180 - 180)
       dec - dec in degrees
     """
-    radio_image_touse = config.radio_image
+    radio_image_touse = config.RADIO_IMAGE_FILE
     # radio_image_touse='/data/das4/packages/MWA_Tools/mwapy/pb/radio408.RaDec.fits'
     # radio_image_touse=radio_image
     if not os.path.exists(radio_image_touse):
@@ -287,7 +286,6 @@ def get_LST(gps):
     return LST.hour  # keep as decimal hr
 
 
-# FIXME: most the arguments in make_primarybeammap are not needed
 def make_primarybeammap(gps, delays, frequency, model, extension='png',
                         plottype='beamsky', figsize=14, directory=None, resolution=1000, zenithnorm=True,
                         b_add_sources=False):
@@ -309,11 +307,11 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
     beams = {}
     # this is the response for XX and YY
     if model == 'analytic' or model == '2014':
+        # Handles theta and phi as floats, 1D, or 2D arrays (and probably higher dimensions)
         beams['XX'], beams['YY'] = primary_beam.MWA_Tile_analytic(theta, phi,
                                                                   freq=frequency, delays=delays,
                                                                   zenithnorm=zenithnorm, power=True)
     elif model == 'avg_EE' or model == 'advanced' or model == '2015' or model == 'AEE':
-        print "Using adanced model ???"
         beams['XX'], beams['YY'] = primary_beam.MWA_Tile_advanced(theta, phi,
                                                                   freq=frequency, delays=delays,
                                                                   power=True)
@@ -323,12 +321,12 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
         beams['XX'], beams['YY'] = primary_beam.MWA_Tile_full_EE(theta, phi,
                                                                  freq=frequency, delays=delays,
                                                                  zenithnorm=zenithnorm, power=True)
-    elif model == 'full_EE_AAVS05':
-        #        h5filepath='/Users/230255E/Temp/_1508_Aug/embedded_element/h5/AAVS05_embedded_element_02_rev0.h5'
-        # h5filepath = 'AAVS05_embedded_element_02_rev0.h5'
-        beams['XX'], beams['YY'] = primary_beam.MWA_Tile_full_EE(theta, phi,
-                                                                 freq=frequency, delays=delays,
-                                                                 zenithnorm=zenithnorm, power=True)
+    # elif model == 'full_EE_AAVS05':
+    #    #        h5filepath='/Users/230255E/Temp/_1508_Aug/embedded_element/h5/AAVS05_embedded_element_02_rev0.h5'
+    #    # h5filepath = 'AAVS05_embedded_element_02_rev0.h5'
+    #    beams['XX'], beams['YY'] = primary_beam.MWA_Tile_full_EE(theta, phi,
+    #                                                             freq=frequency, delays=delays,
+    #                                                             zenithnorm=zenithnorm, power=True)
 
     pols = ['XX', 'YY']
 
@@ -340,22 +338,21 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
     sky_grid[mask] = numpy.nan  # Remask beyond the horizon
 
     # test:
-    delays1 = numpy.array([[6, 6, 6, 6,
-                            4, 4, 4, 4,
-                            2, 2, 2, 2,
-                            0, 0, 0, 0],
-                           [6, 6, 6, 6,
-                            4, 4, 4, 4,
-                            2, 2, 2, 2,
-                            0, 0, 0, 0]],
-                          dtype=numpy.float32)
-    za_delays = {'0': delays1 * 0, '14': delays1, '28': delays1 * 2}
-    d = mwa_tile.Dipole('lookup')
-    tile = mwa_tile.ApertureArray(dipoles=[d] * 16)
-    za_delay = '0'
-    (ax0, ay0) = tile.getArrayFactor(az_grid, za_grid, frequency, za_delays[za_delay])
-    val = numpy.abs(ax0)
-    val_max = numpy.nanmax(val)
+    # delays1 = numpy.array([[6, 6, 6, 6,
+    #                        4, 4, 4, 4,
+    #                        2, 2, 2, 2,
+    #                        0, 0, 0, 0],
+    #                       [6, 6, 6, 6,
+    #                        4, 4, 4, 4,
+    #                        2, 2, 2, 2,
+    #                        0, 0, 0, 0]],
+    #                      dtype=numpy.float32)
+    # za_delays = {'0': delays1 * 0, '14': delays1, '28': delays1 * 2}
+    # tile = mwa_tile.get_AA_Cached()
+    # za_delay = '0'
+    # (ax0, ay0) = tile.getArrayFactor(az_grid, za_grid, frequency, za_delays[za_delay])
+    # val = numpy.abs(ax0)
+    # val_max = numpy.nanmax(val)
     # print "VALUE : %.8f %.8f %.8f" % (frequency, val_max[0], val[resolution / 2, resolution / 2])
 
     beamsky_sum_XX = 0
@@ -416,7 +413,7 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
                                                                                                                   fstring,
                                                                                                                   pol,
                                                                                                                   Tant,
-                                                                                                                  numpy.nanmax(beamsky))
+                                                                                                                  float(numpy.nanmax(beamsky)))
                 plot_beamsky(beamsky, frequency, textlabel, filename + '_scaled', extension,
                              obstime=obstime, figsize=figsize, vmax=numpy.nanmax(beamsky) * 0.4, directory=directory)
 
@@ -442,18 +439,20 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
             beam_dOMEGA_sum_YY)
 
 
-# FIXME: most the arguments in make_primarybeammap are not needed
-def get_beam_power(gps, delays, frequency, model, pointing_az_deg=0, pointing_za_deg=0, zenithnorm=True):
+def get_beam_power(delays, frequency, model, pointing_az_deg=0, pointing_za_deg=0, zenithnorm=True):
     """
     """
-    # lst = get_LST(gps)
+    if type(pointing_za_deg) is list:
+        # Convert to a numpy array, then into radians
+        theta = numpy.array(pointing_za_deg) * math.pi / 180
+    else:
+        theta = pointing_za_deg * math.pi / 180
 
-    # first go from altitude to zenith angle
-    theta_rad = pointing_za_deg * math.pi / 180
-    phi_rad = pointing_az_deg * math.pi / 180
-
-    theta = numpy.array([[theta_rad]])
-    phi = numpy.array([[phi_rad]])
+    if type(pointing_az_deg) is list:
+        # Convert to a numpy array, then into radians
+        phi = numpy.array(pointing_az_deg) * math.pi / 180
+    else:
+        phi = pointing_az_deg * math.pi / 180
 
     beams = {}
     # this is the response for XX and YY
@@ -471,12 +470,12 @@ def get_beam_power(gps, delays, frequency, model, pointing_az_deg=0, pointing_za
         beams['XX'], beams['YY'] = primary_beam.MWA_Tile_full_EE(theta, phi,
                                                                  freq=frequency, delays=delays,
                                                                  zenithnorm=zenithnorm, power=True)
-    elif model == 'full_EE_AAVS05':
-        #        h5filepath='/Users/230255E/Temp/_1508_Aug/embedded_element/h5/AAVS05_embedded_element_02_rev0.h5'
-        # h5filepath = 'AAVS05_embedded_element_02_rev0.h5'
-        beams['XX'], beams['YY'] = primary_beam.MWA_Tile_full_EE(theta, phi,
-                                                                 freq=frequency, delays=delays,
-                                                                 zenithnorm=zenithnorm, power=True)
+    # elif model == 'full_EE_AAVS05':
+    #     #        h5filepath='/Users/230255E/Temp/_1508_Aug/embedded_element/h5/AAVS05_embedded_element_02_rev0.h5'
+    #     # h5filepath = 'AAVS05_embedded_element_02_rev0.h5'
+    #     beams['XX'], beams['YY'] = primary_beam.MWA_Tile_full_EE(theta, phi,
+    #                                                              freq=frequency, delays=delays,
+    #                                                              zenithnorm=zenithnorm, power=True)
     return beams
 
 
@@ -495,9 +494,9 @@ def add_sources(fig, ax1, ax2, obstime=None, az_grid=None, za_grid=None, beamsky
     # add text for sources
     # lst=get_LST(gps)
 
-    for source in sources:
-        RA = Angle(sources[source][1], unit=astropy.units.hour).deg
-        Dec = Angle(sources[source][2], unit=astropy.units.deg).deg
+    for source in SOURCES:
+        RA = Angle(SOURCES[source][1], unit=astropy.units.hour).deg
+        Dec = Angle(SOURCES[source][2], unit=astropy.units.deg).deg
         coords = SkyCoord(ra=RA, dec=Dec, equinox='J2000', unit=(astropy.units.deg, astropy.units.deg))
         coords.location = config.MWAPOS
         coords.obstime = obstime
@@ -539,7 +538,7 @@ def add_sources(fig, ax1, ax2, obstime=None, az_grid=None, za_grid=None, beamsky
             print "MAX(beam) = %.2f at (x,y) = (%d,%d)" % (max_beam, max_beam_x, max_beam_y)
 
         fstring = "%s : (%s,%s) -> (%.4f,%.4f) [deg] -> (az,za) = (%.4f,%.4f) [deg] -> (x,y) = (%d,%d)"
-        params = (source, sources[source][1], sources[source][2], RA, Dec, az, za, x_best, y_best)
+        params = (source, SOURCES[source][1], SOURCES[source][2], RA, Dec, az, za, x_best, y_best)
         print fstring % params
 
     print "------------------------------"

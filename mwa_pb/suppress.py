@@ -124,15 +124,13 @@ def get_best_gridpoints(gps_start,
 
             # if dist_obs_deg < options.max_beam_distance_deg and dist_avoid_deg < options.max_beam_distance_deg :
             if dist_obs < max_beam_distance_deg:
-                beam_obs = primarybeammap_tant.get_beam_power(t.gps,
-                                                              gp_delays[i],
+                beam_obs = primarybeammap_tant.get_beam_power(gp_delays[i],
                                                               freq,
                                                               model=model,
                                                               pointing_az_deg=obs_source_altaz.az.deg,
                                                               pointing_za_deg=90 - obs_source_altaz.alt.deg,
                                                               zenithnorm=True)
-                beam_avoid = primarybeammap_tant.get_beam_power(t.gps,
-                                                                gp_delays[i],
+                beam_avoid = primarybeammap_tant.get_beam_power(gp_delays[i],
                                                                 freq,
                                                                 model=model,
                                                                 pointing_az_deg=avoid_source_altaz.az.deg,

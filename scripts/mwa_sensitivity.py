@@ -97,7 +97,7 @@ def calculate_sensitivity(freq, delays, gps, trcv_type, T_rcv, size, dirname, mo
     (beamsky_sum_XX, beam_sum_XX, Tant_XX, beam_dOMEGA_sum_XX, beamsky_sum_YY, beam_sum_YY, Tant_YY,
      beam_dOMEGA_sum_YY) = result
 
-    beams = get_beam_power(gps, delays, freq,
+    beams = get_beam_power(delays, freq,
                            model=model,
                            pointing_az_deg=pointing_az_deg,
                            pointing_za_deg=pointing_za_deg,
