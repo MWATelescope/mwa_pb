@@ -61,7 +61,7 @@ if __name__ == "__main__":
     if options.daemon:
         while True:
             obsinfo = metadata.get_observation()
-            if obsinfo.starttime <= Time.now().gps < (obsinfo.starttime + 300):
+            if obsinfo['starttime'] <= Time.now().gps < (obsinfo['starttime'] + 300):
                 observing = True
             else:
                 observing = False
@@ -79,7 +79,6 @@ if __name__ == "__main__":
                                                    xmas=False,
                                                    plotscale=options.plotscale,
                                                    )
-            skymap.plt.close('all')
             time.sleep(60)
     else:
         obsinfo = metadata.get_observation(options.obsid)
