@@ -60,6 +60,32 @@ def MWA_Tile_full_EE(za, az, freq,
     az - azimuth angles (radians), north through east.
     za - zenith angles (radian)
     """
+    # Convert za and az into 2D numpy arrays, because the Advanced and FullEE models require that format.
+    if type(za) is list:
+        za = numpy.array(za)
+    if type(az) is list:
+        az = numpy.array(az)
+
+    if (isinstance(za, float)) and (isinstance(az, float)):  # Convert float to 2D array
+        za = numpy.array([[za]])
+        az = numpy.array([[az]])
+        dtype = 'float'
+    elif (isinstance(za, numpy.ndarray)) and (isinstance(az, numpy.ndarray)):
+        if (len(za.shape) == 1) and (len(az.shape) == 1):  # 1D array, convert to 2D array
+            za = za[None, :]
+            az = az[None, :]
+            dtype = '1D'
+        elif (len(za.shape) == 2) and (len(az.shape) == 2):
+            dtype = '2D'
+        else:
+            dtype = 'bad'
+    else:
+        dtype = 'bad'
+
+    if dtype == 'bad':
+        logger.error('ERROR - az/za data types must be the same, and either floats or 1 or 2 dimensional arrays')
+        return None
+
     tile = beam_full_EE.get_AA_Cached(target_freq_Hz=freq)
     mybeam = beam_full_EE.Beam(tile, delays, amps=numpy.ones([2, 16]))  # calling with amplitudes=1 every time - otherwise they get overwritten !!!
     if interp:
@@ -81,14 +107,26 @@ def MWA_Tile_full_EE(za, az, freq,
         pass
 
     if jones:
-        return j
+        if dtype == 'float':
+            return j[0][0]
+        elif dtype == '1D':
+            return j[0]
+        else:
+            return j
 
     # Use mwa_tile makeUnpolInstrumentalResponse because we have swapped axes
     vis = mwa_tile.makeUnpolInstrumentalResponse(j, j)
     if not power:
-        return (numpy.sqrt(vis[:, :, 0, 0].real), numpy.sqrt(vis[:, :, 1, 1].real))
+        xx, yy = (numpy.sqrt(vis[:, :, 0, 0].real), numpy.sqrt(vis[:, :, 1, 1].real))
     else:
-        return (vis[:, :, 0, 0].real, vis[:, :, 1, 1].real)
+        xx, yy = (vis[:, :, 0, 0].real, vis[:, :, 1, 1].real)
+
+    if dtype == 'float':
+        return xx[0][0], yy[0][0]
+    elif dtype == '1D':
+        return xx[0], yy[0]
+    else:
+        return xx, yy
 
 
 #########
@@ -107,6 +145,32 @@ def MWA_Tile_advanced(za, az, freq=100.0e6, delays=None, zenithnorm=None, power=
     if isinstance(delays, list):
         delays = numpy.array(delays)
 
+    # Convert za and az into 2D numpy arrays, because the Advanced and FullEE models require that format.
+    if type(za) is list:
+        za = numpy.array(za)
+    if type(az) is list:
+        az = numpy.array(az)
+
+    if (isinstance(za, float)) and (isinstance(az, float)):  # Convert float to 2D array
+        za = numpy.array([[za]])
+        az = numpy.array([[az]])
+        dtype = 'float'
+    elif (isinstance(za, numpy.ndarray)) and (isinstance(az, numpy.ndarray)):
+        if (len(za.shape) == 1) and (len(az.shape) == 1):  # 1D array, convert to 2D array
+            za = za[None, :]
+            az = az[None, :]
+            dtype = '1D'
+        elif (len(za.shape) == 2) and (len(az.shape) == 2):
+            dtype = '2D'
+        else:
+            dtype = 'bad'
+    else:
+        dtype = 'bad'
+
+    if dtype == 'bad':
+        logger.error('ERROR - az/za data types must be the same, and either floats or 1 or 2 dimensional arrays')
+        return None
+
     if zenithnorm:
         logger.warning('ERROR: MWA_Tile_advanced does not use the zenithnorm parameter.')
 
@@ -122,12 +186,25 @@ def MWA_Tile_advanced(za, az, freq=100.0e6, delays=None, zenithnorm=None, power=
     tile = mwa_tile.get_AA_Cached()  # tile of identical dipoles
     j = tile.getResponse(az, za, freq, delays=delays)
     if jones:
-        return j
+        if dtype == 'float':
+            return j[0][0]
+        elif dtype == '1D':
+            return j[0]
+        else:
+            return j
+
     vis = mwa_tile.makeUnpolInstrumentalResponse(j, j)
     if not power:
-        return (numpy.sqrt(vis[:, :, 0, 0].real), numpy.sqrt(vis[:, :, 1, 1].real))
+        xx, yy = (numpy.sqrt(vis[:, :, 0, 0].real), numpy.sqrt(vis[:, :, 1, 1].real))
     else:
-        return (vis[:, :, 0, 0].real, vis[:, :, 1, 1].real)
+        xx, yy = (vis[:, :, 0, 0].real, vis[:, :, 1, 1].real)
+
+    if dtype == 'float':
+        return xx[0][0], yy[0][0]
+    elif dtype == '1D':
+        return xx[0], yy[0]
+    else:
+        return xx, yy
 
 
 ######################################################################
