@@ -96,12 +96,10 @@ class ApertureArray(object):
         self.n_ant = n_ant
         self.norm_fac = None
 
-        # If the h5 file isn't there, flag an error and return
+        # If the h5 file isn't there, raise an IOError
         if not os.path.exists(h5filepath):
-            logger.critical('Fatal error - h5 file not found at specified location: %s' % h5filepath)
-            self.h5f = None
-            self.freq = None
-            return
+            logger.error('Fatal error - h5 file not found at specified location: %s' % h5filepath)
+            raise IOError, 'h5 file not found at specified location: %s' % h5filepath
         # If we were passed the name of the default h5 file, and it exists, use the pre-loaded copy for speed
         elif h5filepath == config.h5file:
             self.h5f = H5FILE
