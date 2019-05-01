@@ -96,22 +96,25 @@ class ApertureArray(object):
         self.n_ant = n_ant
         self.norm_fac = None
 
-        # load h5file if necessary
-        if h5filepath == config.h5file:
+        # If the h5 file isn't there, flag an error and return
+        if not os.path.exists(h5filepath):
+            logger.critical('Fatal error - h5 file not found at specified location: %s' % h5filepath)
+            self.h5f = None
+            self.freq = None
+            return
+        # If we were passed the name of the default h5 file, and it exists, use the pre-loaded copy for speed
+        elif h5filepath == config.h5file:
             self.h5f = H5FILE
             self.h5_file_version = config.h5fileversion
             freqs = H5FREQS
-        elif os.path.exists(h5filepath):
+        # If we were passed a filename that's not the default h5 file, load it now
+        else:
             logger.debug('Loading beam model from file %s' % h5filepath)
             self.h5f = h5py.File(h5filepath, 'r')
             self.h5_file_version = None    # Unknown, can't use the version in the config module.
             # Find available frequencies in h5 file
             freqs = np.array([int(x[3:]) for x in self.h5f.keys() if 'X1_' in x])
             freqs.sort()
-        else:
-            self.h5f = None
-            self.freq = None
-            return
 
         # find the nearest freq lookup table
         pos = np.argmin(np.abs(freqs - target_freq_Hz))
