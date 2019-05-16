@@ -130,7 +130,7 @@ def main():
     extension = options.extension
     plottype = options.plottype
     model = options.model
-    if model not in ['analytic', 'advanced', 'full_EE', 'full_EE_AAVS05']:
+    if model not in ['analytic', 'advanced', 'full_EE', 'full_EE_AAVS05', '2016', '2015', '2014' ]:
         logger.error("Model %s not found\n" % model)
         sys.exit(1)
     if plottype not in ['all', 'beam', 'sky', 'beamsky', 'beamsky_scaled']:
