@@ -272,8 +272,8 @@ class Beam(object):
                 name = '%s%s_%s' % (pols[pol], ant_i + 1, self.AA.freq)
 
                 # find maximum length
-                if self.AA.h5f[name].shape[1] / 2 > max_length:
-                    max_length = self.AA.h5f[name].shape[1] / 2
+                if self.AA.h5f[name].shape[1] // 2 > max_length:
+                    max_length = self.AA.h5f[name].shape[1] // 2
 
             # accumulating spherical harmonics coefficients for the array
             # initialize
@@ -296,7 +296,7 @@ class Beam(object):
 
                 # current length
                 my_len = np.max(Q_all.shape)
-                my_len_half = my_len / 2
+                my_len_half = my_len // 2
 
                 Q_modes = Q_modes_all[0:my_len, :]  # Get modes for this antenna
 
@@ -304,9 +304,9 @@ class Beam(object):
 
                 # find s=1 and s=2 indices
                 # only find s1 and s2 for this antenna
-                s1 = Q_modes[0:my_len, 0] <= 1
-                s2 = Q_modes[0:my_len, 0] > 1
-
+                s1 = np.array(Q_modes[0:my_len, 0] <= 1, dtype=int)
+                s2 = np.array(Q_modes[0:my_len, 0] > 1, dtype=int)
+                
                 # grab m,n vectors
                 M = Q_modes[s1, 1]
                 N = Q_modes[s1, 2]
@@ -318,12 +318,13 @@ class Beam(object):
                     Nmax = np.max(N_accum)
 
                 # grab Q1mn and Q2mn and make them complex
-                Q1[0:my_len_half] = Q_all[s1, 0] * np.exp(1.0j * Q_all[s1, 1] * deg2rad)
-                Q2[0:my_len_half] = Q_all[s2, 0] * np.exp(1.0j * Q_all[s2, 1] * deg2rad)
+                for qi in range(my_len_half):
+                    Q1[qi] = Q_all[s1[qi], 0] * np.exp(1.0j * Q_all[s1[qi], 1] * deg2rad)
+                    Q2[qi] = Q_all[s2[qi], 0] * np.exp(1.0j * Q_all[s2[qi], 1] * deg2rad)
 
                 # accumulate Q1 and Q2, scaled by excitation voltage
-                Q1_accum = Q1_accum + Q1 * Vcplx[ant_i]
-                Q2_accum = Q2_accum + Q2 * Vcplx[ant_i]
+                Q1_accum += Q1 * Vcplx[ant_i]
+                Q2_accum += Q2 * Vcplx[ant_i]
             self.beam_modes[pols[pol]] = {'Q1': Q1_accum, 'Q2': Q2_accum,
                                           'M': M_accum, 'N': N_accum}
 
