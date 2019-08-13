@@ -8,8 +8,6 @@ It can either be the simple analytic model or the more advanced semi-analytic mo
 
 import os
 
-from astropy.coordinates import EarthLocation
-
 datadir = os.path.join(os.path.dirname(__file__), 'data')
 
 # 2016 beam model
@@ -40,5 +38,3 @@ HIP_CONSTELLATION_FILE = os.path.join(datadir, 'HIP_constellations.dat')
 
 # Haslam image:
 RADIO_IMAGE_FILE = os.path.join(datadir, 'radio408.RaDec.fits')
-
-MWAPOS = EarthLocation.from_geodetic(lon="116:40:14.93", lat="-26:42:11.95", height=377.8)

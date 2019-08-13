@@ -9,24 +9,26 @@ import logging
 import math
 import os
 
+import astropy
 import astropy.io.fits as pyfits
+import astropy.coordinates
+import astropy.time
 
 import numpy
 
 import matplotlib
+
+import skyfield.api as si
 
 matplotlib.use('agg')
 from matplotlib import pyplot as pylab
 
 from scipy.interpolate import RegularGridInterpolator
 
-import astropy
-from astropy.time import Time
-from astropy.coordinates import SkyCoord, Angle, AltAz, ICRS
-
 import config
 import beam_tools
 import primary_beam
+import skyfield_utils as su
 
 EPS = numpy.finfo(numpy.float64).eps  # machine epsilon
 
@@ -129,15 +131,17 @@ def map_sky(skymap, obstime, az_grid, za_grid):
 
       Map skymap onto grid of arbitrary size
     """
+    t = su.time2tai(obstime)
+    observer = su.S_MWAPOS.at(t)
     out = az_grid * 0.0  # new array for gridded sky
 
-    grid = AltAz(az=Angle(az_grid, unit=astropy.units.deg),
-                 alt=Angle(90 - za_grid, unit=astropy.units.deg),
-                 obstime=obstime,
-                 location=config.MWAPOS)
-    grid_equatorial = grid.transform_to(ICRS)
-    ra = grid_equatorial.ra.hour
-    dec_grid = grid_equatorial.dec.deg
+    grid = observer.from_altaz(alt_degrees=(90 - za_grid),
+                               az_degrees=az_grid,
+                               distance=si.Distance(au=9e90))
+
+    grid_ra, grid_dec, _ = grid.radec()
+    ra_degrees = grid_ra.hours
+    dec_degrees = grid_dec.degrees
 
     size_dec = skymap.shape[0]
     size_ra = skymap.shape[1]
@@ -145,8 +149,8 @@ def map_sky(skymap, obstime, az_grid, za_grid):
 
     # the following assumes RA=0 in centre
     # of the sky image and increases to the left.
-    ra_index = (((36 - ra) % 24) / 24) * size_ra
-    dec_index = (dec_grid / 180.0 + 0.5) * size_dec
+    ra_index = (((36 - ra_degrees) % 24) / 24) * size_ra
+    dec_index = (dec_degrees / 180.0 + 0.5) * size_dec
 
     print ra_index.min(), ra_index.max()
     print dec_index.min(), dec_index.max()
@@ -209,19 +213,14 @@ def eq2horz(ra, dec, gps):
       Inputs:
       time - GPS time
     """
-    coords = SkyCoord(ra=ra, dec=dec, equinox='J2000', unit=astropy.units.deg)
-    coords.location = config.MWAPOS
-
-    # convert GPS to an astropy time object
-    coords.obstime = Time(gps, format='gps', scale='utc')
-    # get sidereal_time to reduced precision, by explicitly setting the offset of UT1 from UTC:
-    # or the current time you can also get it much more precisely following the instructions in http://docs.astropy.org/en/latest/time/index.html#transformation-offsets)
-    logger.warning('Using approximate sidereal time:')
-    coords.obstime.delta_ut1_utc = 0
-
-    logger.info('Calculating az, ZA at time %s', coords.obstime)
-    mycoords = coords.transform_to('altaz')
-    return {'Az': mycoords.az.deg, 'ZA': 90 - mycoords.alt.deg}
+    # convert GPS to an skyfield time object
+    t = su.time2tai(gps)
+    coords = si.Star(ra=si.Angle(degrees=ra), dec=si.Angle(degrees=dec))
+    observer = su.S_MWAPOS.at(t)
+    coords_app = observer.observe(coords)
+    logger.info('Calculating az, ZA at time %s', t.utc_iso())
+    coords_alt, coords_az, _ = coords_app.apparent().altaz()
+    return {'Az': coords_az.degrees, 'ZA': 90 - coords_alt.degrees}
 
 
 def horz2eq(az, ZA, gps):
@@ -231,17 +230,10 @@ def horz2eq(az, ZA, gps):
       Inputs:
       time - GPS time
     """
-    time = Time(gps, format='gps', scale='utc')
-    # logger.info('Calculating az, ZA at time %s', coords.obstime)
-    coords = SkyCoord(alt=90 - ZA, az=az,
-                      obstime=time,
-                      frame='altaz',
-                      unit=astropy.units.deg,
-                      equinox='J2000',
-                      location=config.MWAPOS)
-
-    # convert GPS to an astropy time object
-    #    coords.obstime=Time(gps,format='gps',scale='utc')
+    t = su.time2tai(gps)
+    observer = su.S_MWAPOS.at(t)
+    # logger.info('Calculating az, ZA at time %s', t.utc_iso())
+    coords = observer.from_altaz(alt_degrees=(90 - ZA), az_degrees=az, distance=si.Distance(au=9e90))
 
     return {'RA': coords.icrs.ra.deg, 'dec': coords.icrs.dec.deg}
 
@@ -279,11 +271,10 @@ def get_Haslam(freq, scaling=-2.55):
     ######################################################################
 
 
-def get_LST(gps):
-    time = Time(gps, format='gps', scale='utc')
-    time.delta_ut1_utc = 0.0
-    LST = time.sidereal_time('mean', config.MWAPOS.longitude.hour)
-    return LST.hour  # keep as decimal hr
+def get_LST(obstime):
+    t = su.time2tai(obstime)
+    lst = t.gast + (su.MWA_TOPO.longitude.degrees / 15)
+    return lst  # keep as decimal hr
 
 
 def make_primarybeammap(gps, delays, frequency, model, extension='png',
@@ -298,7 +289,7 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
     za_grid = za_grid * 180 / math.pi
     # az_grid+=180.0
     alt_grid = 90 - (za_grid)
-    obstime = Time(gps, format='gps', scale='utc')
+    obstime = su.time2tai(gps)
 
     # first go from altitude to zenith angle
     theta = (90 - alt_grid) * math.pi / 180
@@ -482,26 +473,25 @@ def get_beam_power(delays, frequency, model, pointing_az_deg=0, pointing_za_deg=
 def add_sources(fig, ax1, ax2, obstime=None, az_grid=None, za_grid=None, beamsky=None):
     """Note that this function does nothing, apart from printing some coordinates.
     """
-    obstime.location = config.MWAPOS
-    obstime.delta_ut1_utc = 0
-    lst = obstime.sidereal_time(kind='mean').hour
+    obstime = su.time2tai(obstime)
+    lst = get_LST(obstime)
 
     print "------------------------------"
     print "Adding sources for lst=%.2f [hours] , coordinates = (%.4f,%.4f) [deg]:" % (lst,
-                                                                                      config.MWAPOS.longitude.deg,
-                                                                                      config.MWAPOS.latitude.deg)
+                                                                                      su.MWA_TOPO.longitude.degrees,
+                                                                                      su.MWA_TOPO.latitude.degrees)
     print "------------------------------"
     # add text for sources
     # lst=get_LST(gps)
 
     for source in SOURCES:
-        RA = Angle(SOURCES[source][1], unit=astropy.units.hour).deg
-        Dec = Angle(SOURCES[source][2], unit=astropy.units.deg).deg
-        coords = SkyCoord(ra=RA, dec=Dec, equinox='J2000', unit=(astropy.units.deg, astropy.units.deg))
-        coords.location = config.MWAPOS
-        coords.obstime = obstime
-        coords_prec = coords.transform_to('altaz')
-        az, alt = coords_prec.az.deg, coords_prec.alt.deg
+        # Using astropy.Angle purely to convert the sexagesimal strings, because it's hard in skyfield.
+        RA = astropy.coordinates.Angle(SOURCES[source][1], unit=astropy.units.hour).deg
+        Dec = astropy.coordinates.Angle(SOURCES[source][2], unit=astropy.units.deg).deg
+        coords = si.Star(ra_hours=RA / 15.0, dec_degrees=Dec)
+        observer = su.S_MWAPOS.at(obstime)
+        coords_alt, coords_az, _ = observer.observe(coords).apparent.altaz()
+        az, alt = coords_az.degrees, coords_alt.degrees
         za = 90.00 - alt
 
         x_best = -1
@@ -550,8 +540,8 @@ def plot_beamsky(beamsky, frequency, textlabel, filename, extension,
                  b_add_sources=False, az_grid=None, za_grid=None):
     # do the plotting
     # this sets up the figure with the right aspect ratio
-    obstime.delta_ut1_utc = 0.0
-    lst = obstime.sidereal_time('mean', config.MWAPOS.longitude.hour).hour
+    obstime = su.time2tai(obstime)
+    lst = get_LST(obstime)
 
     fig = pylab.figure(figsize=(figsize, 0.6 * figsize), dpi=300)
     pylab.axis('on')

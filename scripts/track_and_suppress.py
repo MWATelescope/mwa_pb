@@ -15,10 +15,6 @@ import logging
 from optparse import OptionParser
 import sys
 
-import astropy
-from astropy.coordinates import SkyCoord
-from astropy.time import Time
-
 from mwa_pb import config
 from mwa_pb.suppress import get_best_gridpoints_supress_sun, get_best_gridpoints
 
