@@ -85,7 +85,7 @@ def get_best_gridpoints(gps_start,
         logger.debug("Observed source at (az,alt) = (%.4f,%.4f) [deg]" % (obs_source_az.degrees, obs_source_alt.degrees))
         logger.debug("Avoided  source at (az,alt) = (%.4f,%.4f) [deg]" % (avoid_source_az.degrees, avoid_source_alt.degrees))
         logger.debug("Anglular distance = %.2f [deg]" % (dist_deg))
-        logger.debug("Gps time = %d" % t.gps)
+        logger.debug("Gps time = %d" % su.tai2gps(t))
 
         gp_positions = observer.from_altaz(alt_degrees=gp_alts,
                                            az_degrees=gp_azes,
@@ -168,7 +168,7 @@ def get_best_gridpoints(gps_start,
             logger.debug(outstring % (gp_numbers[best_gridpoint],
                                       gp_azes[best_gridpoint],
                                       gp_alts[best_gridpoint],
-                                      t.iso, r_max,
+                                      t.utc_iso(), r_max,
                                       best_gain_obs,
                                       best_gain_avoid))
             tracklist.append((starttime, step, gp_azes[best_gridpoint], gp_alts[best_gridpoint]))
@@ -192,7 +192,7 @@ def get_best_gridpoints_supress_sun(gps_start,
     return get_best_gridpoints(gps_start=gps_start,
                                obs_source_ra_deg=obs_source_ra_deg,
                                obs_source_dec_deg=obs_source_dec_deg,
-                               avoid_source_ra_deg=sunra.degrees,
+                               avoid_source_ra_deg=sunra.hours * 15.0,
                                avoid_source_dec_deg=sundec.degrees,
                                model=model,
                                min_gain=min_gain,
