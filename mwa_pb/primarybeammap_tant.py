@@ -11,8 +11,7 @@ import os
 
 import astropy
 import astropy.io.fits as pyfits
-import astropy.coordinates
-import astropy.time
+import astropy.coordinates    # Just to use the Angle class to parse 'DD:MM:SS.sss' values
 
 import numpy
 
