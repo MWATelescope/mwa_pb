@@ -11,11 +11,14 @@ warnings.filterwarnings("ignore")
 
 import numpy
 
+import skyfield.api as si
+
+import ephem   # Only used to look up what constellation a given ra/dec is in
+
 import astropy
+from astropy.coordinates import Latitude, Longitude   # Used for parsing sexagesimal strings
 from astropy.table import Table
 from astropy.io import fits
-from astropy.time import Time
-from astropy.coordinates import SkyCoord
 
 import matplotlib
 
@@ -34,10 +37,9 @@ except ImportError:
 
 from PIL import Image
 
-import ephem
-
 import config
 import primarybeammap as primarybeammap
+import skyfield_utils as su
 
 logging.basicConfig()
 DEFAULTLOGGER = logging.getLogger()
@@ -216,7 +218,7 @@ def calc_delays(az=0.0, el=0.0):
 
 class SkyData(object):
     def __init__(self, logger=DEFAULTLOGGER):
-
+        su.init_data()
         self.valid = True
         # read the constellation data
         try:
@@ -255,12 +257,12 @@ class SkyData(object):
 
         # Solar system bodies to plot
         # includes size in pixels and color
-        self.bodies = {ephem.Sun:[120, 'yellow', 'Sun'],
-                       ephem.Jupiter:[60, 'cyan', 'Jupiter'],
-                       ephem.Moon:[120, 'lightgray', 'Moon'],
-                       ephem.Mars:[30, 'red', 'Mars'],
-                       ephem.Venus:[40, 'violet', 'Venus'],
-                       ephem.Saturn:[50, 'skyblue', 'Saturn']}
+        self.bodies = {su.PLANETS['Sun']:[120, 'yellow', 'Sun'],
+                       su.PLANETS['Jupiter']:[60, 'cyan', 'Jupiter'],
+                       su.PLANETS['Moon']:[120, 'lightgray', 'Moon'],
+                       su.PLANETS['Mars']:[30, 'red', 'Mars'],
+                       su.PLANETS['Venus']:[40, 'violet', 'Venus'],
+                       su.PLANETS['Saturn']:[50, 'skyblue', 'Saturn']}
 
         try:
             fname = os.path.join(config.RADIO_IMAGE_FILE)
@@ -310,29 +312,26 @@ def plot_MWAconstellations(outfile=None,
         elif '0' in obsinfo['rfstreams']:
             channel = obsinfo['rfstreams']['0']['frequencies'][12]
 
-    obstime = Time(obsinfo['starttime'], format='gps', scale='utc')
+    obstime = su.time2tai(obsinfo['starttime'])
 
     if viewgps is None:
         viewtime = obstime
     else:
-        viewtime = Time(viewgps, format='gps', scale='utc')
+        viewtime = su.time2tai(viewgps)
 
-    viewtime.delta_ut1_utc = 0  # We don't care about IERS tables and high precision answers
-    LST_hours = viewtime.sidereal_time(kind='apparent', longitude=config.MWAPOS.longitude)
+    observer = su.S_MWAPOS.at(viewtime)
+    LST_hours = viewtime.gmst + (su.MWA_TOPO.longitude.degrees / 15)
 
-    mapzenith = SkyCoord(ra=skydata.skymapRA,
-                         dec=skydata.skymapDec,
-                         equinox='J2000',
-                         unit=(astropy.units.deg, astropy.units.deg))
-    mapzenith.location = config.MWAPOS
-    mapzenith.obstime = viewtime
-    altaz = mapzenith.transform_to('altaz')
-    Az, Alt = altaz.az.deg, altaz.alt.deg
+    mapzenith = si.Star(ra=si.Angle(degrees=skydata.skymapRA),
+                        dec=si.Angle(degrees=skydata.skymapDec))
+    mapzenith_app = observer.observe(mapzenith).apparent()
+    mzalt_a, mzaz_a, _ = mapzenith_app.altaz()
+    Az, Alt = mzaz_a.degrees, mzalt_a.degrees
 
     fig = plt.figure(figsize=(FIGSIZE * plotscale, FIGSIZE * plotscale), dpi=DPI)
     ax1 = fig.add_subplot(1, 1, 1)
 
-    bmap = Basemap(projection='ortho', lat_0=config.MWAPOS.latitude.deg, lon_0=LST_hours.hour * 15 - 360, ax=ax1)
+    bmap = Basemap(projection='ortho', lat_0=su.MWA_TOPO.latitude.degrees, lon_0=LST_hours.hour * 15 - 360, ax=ax1)
     nx = len(skydata.skymapra)
     ny = len(skydata.skymapdec)
 
@@ -362,7 +361,7 @@ def plot_MWAconstellations(outfile=None,
                 beamcolor = ((0.5, 0.5, 0.5), (0.75, 0.75, 0.75), (1.0, 1.0, 1.0))
 
         # If the observation is in the future, calculate what delays will be used, instead of using the recorded actual delays
-        if obstime.gps > Time.now().gps + 10:
+        if su.tai2gps(obstime) > su.tai2gps(su.time2tai()) + 10:
             if 0 in obsinfo['rfstreams']:
                 delays = calc_delays(az=obsinfo['rfstreams'][0]['azimuth'], el=obsinfo['rfstreams'][0]['elevation'])
             elif '0' in obsinfo['rfstreams']:
@@ -400,7 +399,7 @@ def plot_MWAconstellations(outfile=None,
     else:
         constellation = ["N/A", "N/A"]
 
-    X0, Y0 = bmap(LST_hours.hour * 15 - 360, config.MWAPOS.latitude.deg)
+    X0, Y0 = bmap(LST_hours.hour * 15 - 360, su.MWA_TOPO.latitude.degrees)
 
     if constellations:
         # plot the constellations
@@ -457,21 +456,14 @@ def plot_MWAconstellations(outfile=None,
                      edgecolor='none',
                      alpha=0.7)
 
-    observer = ephem.Observer()
-    # make sure no refraction is included
-    observer.pressure = 0
-    observer.long = config.MWAPOS.longitude.radian
-    observer.lat = config.MWAPOS.latitude.radian
-    observer.elevation = config.MWAPOS.height.value
-    observer.date = viewtime.datetime.strftime('%Y/%m/%d %H:%M:%S')
-
     # plot the bodies
     for b in skydata.bodies.keys():
         name = skydata.bodies[b][2]
         color = skydata.bodies[b][1]
         size = skydata.bodies[b][0]
-        body = b(observer)
-        ra, dec = map(numpy.degrees, (body.ra, body.dec))
+        body_app = observer.observe(b).apparent()
+        body_ra_a, body_dec_a = body_app.radec()
+        ra, dec = map(numpy.degrees, (body_ra_a._degrees, body_dec_a.degrees))
         newx, newy = bmap(ra, dec)
         testx, testy = bmap(newx, newy, inverse=True)
         if testx < 1e30 and testy < 1e30:
@@ -491,8 +483,8 @@ def plot_MWAconstellations(outfile=None,
             primarybeammap.sources[source][0] = 'Cen A'
         if source == 'ForA':
             primarybeammap.sources[source][0] = 'For A'
-        r = astropy.coordinates.Longitude(angle=primarybeammap.sources[source][1], unit=astropy.units.hour).hour
-        d = astropy.coordinates.Latitude(angle=primarybeammap.sources[source][2], unit=astropy.units.deg).deg
+        r = Longitude(angle=primarybeammap.sources[source][1], unit=astropy.units.hour).hour
+        d = Latitude(angle=primarybeammap.sources[source][2], unit=astropy.units.deg).deg
         horizontalalignment = 'left'
         x = r
         if (len(primarybeammap.sources[source]) >= 6 and primarybeammap.sources[source][5] == 'c'):
