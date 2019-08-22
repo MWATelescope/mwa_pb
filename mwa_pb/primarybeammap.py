@@ -86,7 +86,7 @@ radio_image = config.RADIO_IMAGE_FILE
 ######################################################################
 def sunposition(t=None):
     """
-      ra,dec,az,alt=sunposition(t) where t is an astropy.time.Time object
+      ra,dec,az,alt=sunposition(t) where t is an skyfield Time object
       all returned values are in degrees
     """
     su.init_data()
@@ -99,7 +99,7 @@ def sunposition(t=None):
 ######################################################################
 def moonposition(t=None):
     """
-      ra,dec,az,alt=moonposition(t) where t is an astropy.time.Time object
+      ra,dec,az,alt=moonposition(t) where t is an skyfield Time object
       all returned values are in degrees
     """
     su.init_data()
@@ -112,7 +112,7 @@ def moonposition(t=None):
 ######################################################################
 def jupiterposition(t=None):
     """
-      ra,dec,az,alt=jupiterposition(t) where t is an astropy.time.Time object
+      ra,dec,az,alt=jupiterposition(t) where t is an skyfield Time object
       all returned values are in degrees
     """
     su.init_data()
