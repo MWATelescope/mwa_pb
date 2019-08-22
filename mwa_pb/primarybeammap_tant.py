@@ -489,7 +489,7 @@ def add_sources(fig, ax1, ax2, obstime=None, az_grid=None, za_grid=None, beamsky
         Dec = astropy.coordinates.Angle(SOURCES[source][2], unit=astropy.units.deg).deg
         coords = si.Star(ra_hours=RA / 15.0, dec_degrees=Dec)
         observer = su.S_MWAPOS.at(obstime)
-        coords_alt, coords_az, _ = observer.observe(coords).apparent.altaz()
+        coords_alt, coords_az, _ = observer.observe(coords).apparent().altaz()
         az, alt = coords_az.degrees, coords_alt.degrees
         za = 90.00 - alt
 
