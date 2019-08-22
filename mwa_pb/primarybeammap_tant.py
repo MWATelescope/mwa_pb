@@ -282,7 +282,7 @@ def get_Haslam(freq, scaling=-2.55):
 def get_LST(gps):
     time = Time(gps, format='gps', scale='utc')
     time.delta_ut1_utc = 0.0
-    LST = time.sidereal_time('mean', config.MWAPOS.longitude.hour)
+    LST = time.sidereal_time('mean', config.MWAPOS.lon)
     return LST.hour  # keep as decimal hr
 
 
