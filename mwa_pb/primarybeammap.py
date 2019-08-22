@@ -91,7 +91,7 @@ def sunposition(t=None):
     sun = get_sun(t)
     sun.location = config.MWAPOS
     sun_prec = sun.transform_to('altaz')
-    return (sun_prec.ra.deg, sun_prec.de.deg, sun_prec.az.deg, sun_prec.alt.deg)
+    return (sun.ra.deg, sun.dec.deg, sun_prec.az.deg, sun_prec.alt.deg)
 
 
 ######################################################################
@@ -103,7 +103,7 @@ def moonposition(t=None):
     moon = get_body('Moon', t)
     moon.location = config.MWAPOS
     moon_prec = moon.transform_to('altaz')
-    return (moon_prec.ra.deg, moon_prec.de.deg, moon_prec.az.deg, moon_prec.alt.deg)
+    return (moon.ra.deg, moon.dec.deg, moon_prec.az.deg, moon_prec.alt.deg)
 
 
 ######################################################################
@@ -115,7 +115,7 @@ def jupiterposition(t=None):
     jupiter = get_body('Jupiter', t)
     jupiter.location = config.MWAPOS
     jupiter_prec = jupiter.transform_to('altaz')
-    return (jupiter_prec.ra.deg, jupiter_prec.de.deg, jupiter_prec.az.deg, jupiter_prec.alt.deg)
+    return (jupiter.ra.deg, jupiter.dec.deg, jupiter_prec.az.deg, jupiter_prec.alt.deg)
 
 
 ######################################################################
