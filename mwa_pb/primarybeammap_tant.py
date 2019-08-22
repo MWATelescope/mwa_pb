@@ -233,8 +233,8 @@ def horz2eq(az, ZA, gps):
     observer = su.S_MWAPOS.at(t)
     # logger.info('Calculating az, ZA at time %s', t.utc_iso())
     coords = observer.from_altaz(alt_degrees=(90 - ZA), az_degrees=az, distance=si.Distance(au=9e90))
-
-    return {'RA': coords.icrs.ra.deg, 'dec': coords.icrs.dec.deg}
+    ra_a, dec_a, _ = coords.radec()
+    return {'RA': ra_a._degrees, 'dec': dec_a.degrees}
 
 
 def get_Haslam(freq, scaling=-2.55):
