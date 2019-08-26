@@ -238,6 +238,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
     RA, Dec = numpy.meshgrid(ra * 15, dec)
 
     coords = si.Star(ra=si.Angle(degrees=RA), dec=si.Angle(degrees=Dec))
+    # TODO - This line will NOT WORK because of an unfixed bug in skyfield!
     coords_app = observer.observe(coords).apparent()
     Az_a, Alt_a, _ = coords_app.altaz()
     Az, Alt = Az_a.degrees, Alt_a.degrees
@@ -412,6 +413,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
 
     if len(ra_sat) > 0:
         coords = si.Star(ra=si.Angle(degrees=ra_sat), dec=si.Angle(degrees=dec_sat))
+        # TODO - This line will NOT WORK because of an unfixed bug in skyfield!
         coords_app = observer.observe(coords).apparent()
         Azsat_a, Altsat_a, _ = coords_app.altaz()
         Azsat, Altsat = Azsat_a.degrees, Altsat_a.degrees
@@ -704,6 +706,7 @@ def get_skytemp(datetimestring, delays, frequency, alpha=-2.6, verbose=True):
 
     RA, Dec = numpy.meshgrid(ra * 15, dec)
     coords = si.Star(ra=si.Angle(degrees=RA), dec=si.Angle(degrees=Dec))
+    # TODO - This line will NOT WORK because of an unfixed bug in skyfield!
     coords_app = observer.observe(coords).apparent()
     Az_a, Alt_a, _ = coords_app.altaz()
     Az, Alt = Az_a.degrees, Alt_a.degrees

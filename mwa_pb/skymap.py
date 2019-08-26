@@ -322,6 +322,7 @@ def plot_MWAconstellations(outfile=None,
     observer = su.S_MWAPOS.at(viewtime)
     LST_hours = viewtime.gmst + (su.MWA_TOPO.longitude.degrees / 15)
 
+    # TODO - This line will NOT WORK because of an unfixed bug in skyfield!
     mapzenith = si.Star(ra=si.Angle(degrees=skydata.skymapRA),
                         dec=si.Angle(degrees=skydata.skymapDec))
     mapzenith_app = observer.observe(mapzenith).apparent()

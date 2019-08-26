@@ -95,7 +95,7 @@ def MWA_Tile_full_EE(za, az, freq,
     if zenithnorm:
         j = tile.apply_zenith_norm_Jones(j)  # Normalise
 
-    # TODO: do frequency interpolation here (with 2nd adjacent beam)
+    # TO DO: do frequency interpolation here (with 2nd adjacent beam)
 
     # Use swapaxis to place jones matrices in last 2 dimensions
     # insead of first 2 dims.

@@ -180,6 +180,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
     coords = si.Star(ra=si.Angle(degrees=RA),
                      dec=si.Angle(degrees=Dec))
     observer = su.S_MWAPOS.at(mwatime)
+    # TODO - This line will NOT WORK because of an unfixed bug in skyfield!
     coords_apparent = observer.observe(coords).apparent()
     coords_alt, coords_az, _ = coords_apparent.altaz()
     Az, Alt = coords_az.degrees, coords_alt.degrees
@@ -287,7 +288,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
     if jones:
         root = os.path.splitext(filename)[0]
         outnames = []
-        # TODO: Why is this XX not XTHETA?
+        # Why is this XX not XTHETA?
         pols = [['XX', -5, 0, 0],
                 ['XY', -7, 0, 1],
                 ['YX', -6, 1, 0],

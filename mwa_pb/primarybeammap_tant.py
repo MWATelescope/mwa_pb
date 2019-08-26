@@ -182,7 +182,7 @@ def map_sky_astropy(skymap, RA, dec, gps, az_grid, za_grid):
 
     # Set up interp function using sky map
     # flip so interpolation has increasing values
-    # TODO: I don't think this will affect outcome!
+    # TO DO: I don't think this will affect outcome!
     my_interp_fn = RegularGridInterpolator((dec, RA[::-1]), skymap[:, ::-1], fill_value=None)
     # fill_value = None means that values outside domain are extrapolated.
     # fill_value=nan would be preferable, but this causes error due to bug in scipy<15.0, as per
@@ -548,7 +548,7 @@ def plot_beamsky(beamsky, frequency, textlabel, filename, extension,
 
     pylab.axis('off')
     # Add polar grid on top (but transparent background)
-    # TODO: change grid labels to ZA.
+    # TO DO: change grid labels to ZA.
     ax2 = fig.add_subplot(1, 1, 1, polar=True, frameon=False)
     ax2.set_theta_zero_location("N")
     ax2.set_theta_direction(-1)
