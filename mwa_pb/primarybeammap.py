@@ -79,8 +79,6 @@ logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger('primarybeammap')
 logger.setLevel(logging.WARNING)
 
-radio_image = config.RADIO_IMAGE_FILE
-
 
 ######################################################################
 def sunposition(t=None):
@@ -174,17 +172,16 @@ def make_primarybeammap(datetimestring, delays, frequency,
         low = 1
 
     # get the Haslam 408 MHz map
-    radio_image_touse = radio_image
 
-    if not os.path.exists(radio_image_touse):
-        logger.error("Could not find 408 MHz image: %s\n" % (radio_image_touse))
+    if not os.path.exists(config.RADIO_IMAGE_FILE):
+        logger.error("Could not find 408 MHz image: %s\n" % (config.RADIO_IMAGE_FILE))
         return None
     try:
         if (verbose):
-            print "Loading 408 MHz map from %s..." % radio_image_touse
-        f = pyfits.open(radio_image_touse)
+            print "Loading 408 MHz map from %s..." % config.RADIO_IMAGE_FILE
+        f = pyfits.open(config.RADIO_IMAGE_FILE)
     except Exception, e:
-        logger.error("Error opening 408 MHz image: %s\nError: %s\n" % (radio_image_touse, e))
+        logger.error("Error opening 408 MHz image: %s\nError: %s\n" % (config.RADIO_IMAGE_FILE, e))
         return None
     skymap = f[0].data[0]
     # x=skymap[:,0].reshape(-1,1)
@@ -693,20 +690,15 @@ def get_skytemp(datetimestring, delays, frequency, alpha=-2.6, verbose=True):
 
     """
     # get the Haslam 408 MHz map
-    dirname = os.path.dirname(__file__)
-    if (len(dirname) == 0):
-        dirname = '.'
-    radio_image_touse = dirname + '/' + radio_image
-
-    if not os.path.exists(radio_image_touse):
-        logger.error("Could not find 408 MHz image: %s\n" % (radio_image_touse))
+    if not os.path.exists(config.RADIO_IMAGE_FILE):
+        logger.error("Could not find 408 MHz image: %s\n" % (config.RADIO_IMAGE_FILE))
         return None
     try:
         if (verbose):
-            print "Loading 408 MHz map from %s..." % radio_image_touse
-        f = pyfits.open(radio_image_touse)
+            print "Loading 408 MHz map from %s..." % config.RADIO_IMAGE_FILE
+        f = pyfits.open(config.RADIO_IMAGE_FILE)
     except Exception, e:
-        logger.error("Error opening 408 MHz image: %s\nError: %s\n" % (radio_image_touse, e))
+        logger.error("Error opening 408 MHz image: %s\nError: %s\n" % (config.RADIO_IMAGE_FILE, e))
         return None
     skymap = f[0].data[0]
 
