@@ -88,7 +88,7 @@ def sunposition(t=None):
       all returned values are in degrees
     """
     su.init_data()
-    sun = su.S_MWAPOS.at(t).observe(su.PLANETS['Sun']).apparent()
+    sun = su.S_MWAPOS.at(t).observe(su.PLANETS['SUN']).apparent()
     sunra, sundec, _ = sun.radec()
     sunalt, sunaz, _ = sun.altaz()
     return (sunra._degrees, sundec.degrees, sunaz.degrees, sunalt.degrees)
@@ -101,7 +101,7 @@ def moonposition(t=None):
       all returned values are in degrees
     """
     su.init_data()
-    moon = su.S_MWAPOS.at(t).observe(su.PLANETS['Moon']).apparent()
+    moon = su.S_MWAPOS.at(t).observe(su.PLANETS['MOON']).apparent()
     moonra, moondec, _ = moon.radec()
     moonalt, moonaz, _ = moon.altaz()
     return (moonra._degrees, moondec.degrees, moonaz.degrees, moonalt.degrees)
@@ -114,7 +114,7 @@ def jupiterposition(t=None):
       all returned values are in degrees
     """
     su.init_data()
-    jupiter = su.S_MWAPOS.at(t).observe(su.PLANETS['Jupiter']).apparent()
+    jupiter = su.S_MWAPOS.at(t).observe(su.PLANETS['JUPITER BARYCENTER']).apparent()
     jupiterra, jupiterdec, _ = jupiter.radec()
     jupiteralt, jupiteraz, _ = jupiter.altaz()
     return (jupiterra._degrees, jupiterdec.degrees, jupiteraz.degrees, jupiteralt.degrees)
