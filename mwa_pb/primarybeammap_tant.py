@@ -123,49 +123,7 @@ def get_azza_arrays_fov(gridsize=361, fov=180.0):
     return az_grid * 180.0 / math.pi, za_grid * 180.0 / math.pi
 
 
-######################################################################
-def map_sky(skymap, obstime, az_grid, za_grid):
-    """
-      Converted from Randall Wayth's IDL code.
-
-      Map skymap onto grid of arbitrary size
-    """
-    t = su.time2tai(obstime)
-    observer = su.S_MWAPOS.at(t)
-    out = az_grid * 0.0  # new array for gridded sky
-
-    grid = observer.from_altaz(alt_degrees=(90 - za_grid),
-                               az_degrees=az_grid,
-                               distance=si.Distance(au=9e90))
-
-    grid_ra, grid_dec, _ = grid.radec()
-    ra_degrees = grid_ra.hours
-    dec_degrees = grid_dec.degrees
-
-    size_dec = skymap.shape[0]
-    size_ra = skymap.shape[1]
-    p = za_grid < 90.0 + EPS  # array indices for visible sky
-
-    # the following assumes RA=0 in centre
-    # of the sky image and increases to the left.
-    ra_index = (((36 - ra_degrees) % 24) / 24) * size_ra
-    dec_index = (dec_degrees / 180.0 + 0.5) * size_dec
-
-    print ra_index.min(), ra_index.max()
-    print dec_index.min(), dec_index.max()
-
-    # select pixels of sky map, using ra and dec index values
-    # rounded down to nearest index integer
-    # print p
-    # print numpy.rint(ra_index[p]),numpy.rint(dec_index[p])
-    print numpy.rint(ra_index[p]).astype(int)
-    print numpy.rint(dec_index[p]).astype(int)
-    print skymap.shape
-    out[p] = skymap[dec_index[p].astype(int), ra_index[p].astype(int)]
-    return out
-
-
-def map_sky_astropy(skymap, RA, dec, gps, az_grid, za_grid):
+def map_sky(skymap, RA, dec, gps, az_grid, za_grid):
     """
       Reprojects Haslam map onto an input az, ZA grid.
       Inputs:
@@ -205,23 +163,6 @@ def map_sky_astropy(skymap, RA, dec, gps, az_grid, za_grid):
     return my_map
 
 
-def eq2horz(ra, dec, gps):
-    """
-      Convert from equatorial (RA, dec) to horizontal (az, ZA)"
-      Returns Az (CW from North) and ZA in degrees at a given time,
-      Inputs:
-      time - GPS time
-    """
-    # convert GPS to an skyfield time object
-    t = su.time2tai(gps)
-    coords = si.Star(ra=si.Angle(degrees=ra), dec=si.Angle(degrees=dec))
-    observer = su.S_MWAPOS.at(t)
-    coords_app = observer.observe(coords)
-    logger.info('Calculating az, ZA at time %s', t.utc_iso())
-    coords_alt, coords_az, _ = coords_app.apparent().altaz()
-    return {'Az': coords_az.degrees, 'ZA': 90 - coords_alt.degrees}
-
-
 def horz2eq(az, ZA, gps):
     """
       Convert from horizontal (az, ZA) to equatorial (RA, dec)"
@@ -234,7 +175,7 @@ def horz2eq(az, ZA, gps):
     # logger.info('Calculating az, ZA at time %s', t.utc_iso())
     coords = observer.from_altaz(alt_degrees=(90 - ZA), az_degrees=az, distance=si.Distance(au=9e90))
     ra_a, dec_a, _ = coords.radec()
-    return {'RA': ra_a._degrees, 'dec': dec_a.degrees}
+    return {'RA':ra_a._degrees, 'dec':dec_a.degrees}
 
 
 def get_Haslam(freq, scaling=-2.55):
@@ -324,7 +265,7 @@ def make_primarybeammap(gps, delays, frequency, model, extension='png',
     my_map = get_Haslam(frequency)
     mask = numpy.isnan(za_grid)
     za_grid[numpy.isnan(za_grid)] = 90.0  # Replace nans as they break the interpolation
-    sky_grid = map_sky_astropy(my_map['skymap'], my_map['RA'], my_map['dec'], gps, az_grid, za_grid)
+    sky_grid = map_sky(my_map['skymap'], my_map['RA'], my_map['dec'], gps, az_grid, za_grid)
     sky_grid[mask] = numpy.nan  # Remask beyond the horizon
 
     # test:
@@ -611,7 +552,7 @@ def plot_beamsky(beamsky, frequency, textlabel, filename, extension,
         hdu.header['FREQ'] = frequency
 
         hdulist = pyfits.HDUList([hdu])
-        hdulist.writeto(full_filename, clobber=True)
+        hdulist.writeto(full_filename, overwrite=True)
         print "Saved output image to file %s" % full_filename
     except RuntimeError, err:
         logger.error('Error saving figure: %s\n' % err)

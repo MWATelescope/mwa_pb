@@ -10,9 +10,9 @@ import math
 
 import numpy
 
-import skyfield.api as si
-
-import skyfield_utils as su
+import astropy
+from astropy.time import Time
+from astropy.coordinates import SkyCoord
 
 import beam_full_EE
 import config
@@ -433,15 +433,16 @@ def get_beam_response(obsid,
         logger.error('Must supply equal numbers of RAs and Decs\n')
         return None
 
-    su.init_data()
-    obs_source = si.Star(ra=si.Angle(degrees=RAs),
-                         dec=si.Angle(degrees=Decs))
+    obs_source = SkyCoord(ra=RAs,
+                          dec=Decs,
+                          equinox='J2000',
+                          unit=(astropy.units.deg, astropy.units.deg))
+    obs_source.location = config.MWAPOS
+
     for itime in xrange(Ntimes):
-        t = su.time2tai(midtimes[itime])
-        observer = su.S_MWAPOS.at(t)
-        obs_source_apparent = observer.observe(obs_source).apparent()
-        obs_source_alt, obs_source_az, _ = obs_source_apparent.altaz()
-        Azs, Alts = obs_source_az.degrees, obs_source_alt.degrees
+        obs_source.obstime = Time(midtimes[itime], format='gps', scale='utc')
+        obs_source_prec = obs_source.transform_to('altaz')
+        Azs, Alts = obs_source_prec.az.deg, obs_source_prec.alt.deg
 
         # go from altitude to zenith angle
         theta = numpy.radians(90 - Alts)

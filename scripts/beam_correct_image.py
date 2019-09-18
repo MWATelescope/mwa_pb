@@ -13,14 +13,12 @@ from optparse import OptionParser
 import sys
 
 import astropy
+from astropy.coordinates import SkyCoord, FK5
 import astropy.io.fits as pyfits
 import astropy.wcs as pywcs
+from astropy.time import Time
 
 import numpy as np
-
-import skyfield.api as si
-
-from mwa_pb import skyfield_utils as su
 
 from mwa_pb import config
 from mwa_pb import mwa_sweet_spots
@@ -150,8 +148,8 @@ def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0.0, gps=0):
         logger.error('Unable to read observation date DATE-OBS from %s' % filename)
 
         if gps > 0:
-            tref = su.time2tai(gps)
-            d = tref.utc_iso[:-1]
+            tref = Time(gps, format='gps', scale='utc')
+            d = tref.fits
             print "gps=%d -> d=%s" % (gps, d)
         else:
             logger.error('GPS time not provided either -> cannot continue')
@@ -160,19 +158,19 @@ def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0.0, gps=0):
     if '.' in d:
         d = d.split('.')[0]
     dt = datetime.datetime.strptime(d, '%Y-%m-%dT%H:%M:%S')
-    mwatime = su.TIMESCALE.utc(dt)
-    logger.info('Computing for %s=%10.0f' % (mwatime.utc_iso(), su.tai2gps(mwatime)))
-    observer = su.S_MWAPOS.at(mwatime)
+    mwatime = Time(dt)
+    logger.info('Computing for %s=%10.0f' % (mwatime.iso, mwatime.gps))
 
-    source = si.Star(ra=si.Angle(degrees=RA), dec=si.Angle(degrees=Dec))
-    source_app = observer.observe(source).apparent()
+    source = SkyCoord(ra=RA, dec=Dec, frame='icrs', unit=(astropy.units.deg, astropy.units.deg))
+    source.location = config.MWAPOS
+    source.obstime = mwatime
 
-    source_alt_a, source_az_a, _ = source_app.altaz()
-    Alt, Az = source_alt_a.degrees, source_az_a.degrees  # Transform to Topocentric Alt/Az at the current epoch
+    source_altaz = source.transform_to('altaz')
+    Alt, Az = source_altaz.alt.deg, source_altaz.az.deg  # Transform to Topocentric Alt/Az at the current epoch
 
     if precess:
-        RAnow_a, Decnow_a, _ = source_app.radec()
-        RAnow, Decnow = RAnow_a._degrees, Decnow_a.degrees
+        source_now = source.transform_to(FK5(equinox=mwatime))  # Transform to FK5 coordinates at the current epoch
+        RAnow, Decnow = source_now.ra.deg, source_now.dec.deg
     else:
         RAnow, Decnow = RA, Dec
 

@@ -6,13 +6,13 @@ make_primarybeammap()
 
 """
 
-import datetime
 import logging
 import math
 import os
 
 import astropy
-from astropy.coordinates import Angle
+from astropy.coordinates import SkyCoord, Angle
+from astropy.time import Time
 from astropy.io import fits as pyfits
 
 import numpy
@@ -79,8 +79,6 @@ sources = {
 logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger('primarybeammap')
 logger.setLevel(logging.WARNING)
-
-radio_image = config.RADIO_IMAGE_FILE
 
 
 ######################################################################
@@ -171,18 +169,15 @@ def make_primarybeammap(datetimestring, delays, frequency,
     if (low <= 0):
         low = 1
 
-    # get the Haslam 408 MHz map
-    radio_image_touse = radio_image
-
-    if not os.path.exists(radio_image_touse):
-        logger.error("Could not find 408 MHz image: %s\n" % (radio_image_touse))
+    if not os.path.exists(config.RADIO_IMAGE_FILE):
+        logger.error("Could not find 408 MHz image: %s\n" % (config.RADIO_IMAGE_FILE))
         return None
     try:
         if (verbose):
-            print "Loading 408 MHz map from %s..." % radio_image_touse
-        f = pyfits.open(radio_image_touse)
+            print "Loading 408 MHz map from %s..." % config.RADIO_IMAGE_FILE
+        f = pyfits.open(config.RADIO_IMAGE_FILE)
     except Exception, e:
-        logger.error("Error opening 408 MHz image: %s\nError: %s\n" % (radio_image_touse, e))
+        logger.error("Error opening 408 MHz image: %s\nError: %s\n" % (config.RADIO_IMAGE_FILE, e))
         return None
     skymap = f[0].data[0]
     # x=skymap[:,0].reshape(-1,1)
@@ -216,15 +211,15 @@ def make_primarybeammap(datetimestring, delays, frequency,
         logger.error('Could not parse datetimestring %s\n' % datetimestring)
         return None
 
-    obstime = su.TIMESCALE.utc(year=yr, month=mn, day=dy, hour=hour, minute=minute, second=second)
-    observer = su.S_MWAPOS.at(obstime)
+    s_obstime = su.TIMESCALE.utc(year=yr, month=mn, day=dy, hour=hour, minute=minute, second=second)
+    observer = su.S_MWAPOS.at(s_obstime)
 
     # determine the LST
-    LST_hours = obstime.gmst + (su.MWA_TOPO.longitude.degrees / 15)
+    LST_hours = s_obstime.gmst + (su.MWA_TOPO.longitude.degrees / 15)
     if LST_hours > 24.0:
         LST_hours -= 24.0
     if (verbose):
-        print "For %s UT, LST=%6.4f" % (obstime.utc_iso()[:-1], LST_hours)
+        print "For %s UT, LST=%6.4f" % (s_obstime.utc_iso()[:-1], LST_hours)
 
     # this will be the center of the image
     RA0 = 0
@@ -236,12 +231,14 @@ def make_primarybeammap(datetimestring, delays, frequency,
 
     # use LST to get Az,Alt grid for image
     RA, Dec = numpy.meshgrid(ra * 15, dec)
+    UTs = '%02d:%02d:%02d' % (hour, minute, second)
+    a_obstime = Time('%d-%d-%d %s' % (yr, mn, dy, UTs), scale='utc')
 
-    coords = si.Star(ra=si.Angle(degrees=RA), dec=si.Angle(degrees=Dec))
-    # TODO - This line will NOT WORK because of an unfixed bug in skyfield!
-    coords_app = observer.observe(coords).apparent()
-    Az_a, Alt_a, _ = coords_app.altaz()
-    Az, Alt = Az_a.degrees, Alt_a.degrees
+    coords = SkyCoord(ra=RA, dec=Dec, equinox='J2000', unit=(astropy.units.deg, astropy.units.deg))
+    coords.location = config.MWAPOS
+    coords.obstime = a_obstime
+    coords_prec = coords.transform_to('altaz')
+    Az, Alt = coords_prec.az.deg, coords_prec.alt.deg
 
     # get the horizon line
     Az_Horz = numpy.arange(360.0)
@@ -257,7 +254,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
     maskedskymap = numpy.where(Alt > 0, skymap, numpy.nan)
 
     # figure out where the Sun will be
-    RAsun, Decsun, Azsun, Altsun = sunposition(obstime)
+    RAsun, Decsun, Azsun, Altsun = sunposition(s_obstime)
     if (RAsun > 180 + RA0):
         RAsun -= 360
     if (RAsun < -180 + RA0):
@@ -277,7 +274,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
         satellite_label = tlelines[0].replace('_', r'\_').replace('\n', '')
         satellite = si.EarthSatellite(tlelines[1], tlelines[2], name=tlelines[0], ts=su.TIMESCALE)
         ra_sat, dec_sat, time_sat, sublong_sat, sublat_sat = satellite_positions(satellite,
-                                                                                 obstime,
+                                                                                 s_obstime,
                                                                                  range(0, duration, 1),
                                                                                  RA0=RA0)
 
@@ -394,7 +391,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
         ax1.plot(numpy.array(RAsuns) / 15.0, numpy.array(Decsuns), 'y-')
 
     if moon:
-        RAmoon, Decmoon, Azmoon, Altmoon = moonposition(obstime)
+        RAmoon, Decmoon, Azmoon, Altmoon = moonposition(s_obstime)
         if (RAmoon > 180 + RA0):
             RAmoon -= 360
         if (RAmoon < -180 + RA0):
@@ -403,7 +400,7 @@ def make_primarybeammap(datetimestring, delays, frequency,
         print RAmoon, Decmoon
 
     if jupiter:
-        RAjupiter, Decjupiter, Azjupiter, Altjupiter = jupiterposition(obstime)
+        RAjupiter, Decjupiter, Azjupiter, Altjupiter = jupiterposition(s_obstime)
         if (RAjupiter > 180 + RA0):
             RAjupiter -= 360
         if (RAjupiter < -180 + RA0):
@@ -412,11 +409,11 @@ def make_primarybeammap(datetimestring, delays, frequency,
         print RAjupiter, Decjupiter
 
     if len(ra_sat) > 0:
-        coords = si.Star(ra=si.Angle(degrees=ra_sat), dec=si.Angle(degrees=dec_sat))
-        # TODO - This line will NOT WORK because of an unfixed bug in skyfield!
-        coords_app = observer.observe(coords).apparent()
-        Azsat_a, Altsat_a, _ = coords_app.altaz()
-        Azsat, Altsat = Azsat_a.degrees, Altsat_a.degrees
+        coords = SkyCoord(ra=ra_sat, dec=dec_sat, equinox='J2000', unit=(astropy.units.deg, astropy.units.deg))
+        coords.location = config.MWAPOS
+        coords.obstime = a_obstime
+        coords_prec = coords.transform_to('altaz')
+        Azsat, Altsat = coords_prec.az.deg, coords_prec.alt.deg
 
         rsat = return_beam(Altsat, Azsat, delays, frequency)
         ax1.plot(numpy.array(ra_sat) / 15.0, numpy.array(dec_sat), 'c-')
@@ -659,21 +656,15 @@ def get_skytemp(datetimestring, delays, frequency, alpha=-2.6, verbose=True):
     """
     su.init_data()
 
-    # get the Haslam 408 MHz map
-    dirname = os.path.dirname(__file__)
-    if (len(dirname) == 0):
-        dirname = '.'
-    radio_image_touse = dirname + '/' + radio_image
-
-    if not os.path.exists(radio_image_touse):
-        logger.error("Could not find 408 MHz image: %s\n" % (radio_image_touse))
+    if not os.path.exists(config.RADIO_IMAGE_FILE):
+        logger.error("Could not find 408 MHz image: %s\n" % (config.RADIO_IMAGE_FILE))
         return None
     try:
         if (verbose):
-            print "Loading 408 MHz map from %s..." % radio_image_touse
-        f = pyfits.open(radio_image_touse)
+            print "Loading 408 MHz map from %s..." % config.RADIO_IMAGE_FILE
+        f = pyfits.open(config.RADIO_IMAGE_FILE)
     except Exception, e:
-        logger.error("Error opening 408 MHz image: %s\nError: %s\n" % (radio_image_touse, e))
+        logger.error("Error opening 408 MHz image: %s\nError: %s\n" % (config.RADIO_IMAGE_FILE, e))
         return None
     skymap = f[0].data[0]
 
@@ -693,23 +684,20 @@ def get_skytemp(datetimestring, delays, frequency, alpha=-2.6, verbose=True):
     except ValueError:
         logger.error('Could not parse datetimestring %s\n' % datetimestring)
         return None
-
-    obstime = su.TIMESCALE.utc(year=yr, month=mn, day=dy, hour=hour, minute=minute, second=second)
-    observer = su.S_MWAPOS.at(obstime)
-
-    # determine the LST
-    LST_hours = obstime.gmst + (su.MWA_TOPO.longitude.degrees / 15)
-    if LST_hours > 24.0:
-        LST_hours -= 24.0
+    # UT = hour + minute / 60.0 + second / 3600.0
+    UTs = '%02d:%02d:%02d' % (hour, minute, second)
+    a_obstime = Time('%d-%d-%d %s' % (yr, mn, dy, UTs), scale='utc')
+    a_obstime.delta_ut1_utc = 0
+    a_obstime.location = config.MWAPOS
     if (verbose):
-        print "For %s UT, LST=%6.4f" % (obstime.utc_iso()[:-1], LST_hours)
+        print "For %02d-%02d-%02d %s UT, LST=%6.3f" % (yr, mn, dy, UTs, a_obstime.sidereal_time(kind='mean').hour)
 
     RA, Dec = numpy.meshgrid(ra * 15, dec)
-    coords = si.Star(ra=si.Angle(degrees=RA), dec=si.Angle(degrees=Dec))
-    # TODO - This line will NOT WORK because of an unfixed bug in skyfield!
-    coords_app = observer.observe(coords).apparent()
-    Az_a, Alt_a, _ = coords_app.altaz()
-    Az, Alt = Az_a.degrees, Alt_a.degrees
+    coords = SkyCoord(ra=RA, dec=Dec, equinox='J2000', unit=(astropy.units.deg, astropy.units.deg))
+    coords.location = config.MWAPOS
+    coords.obstime = a_obstime
+    coords_prec = coords.transform_to('altaz')
+    Az, Alt = coords_prec.az.deg, coords_prec.alt.deg
 
     if (verbose):
         print "Creating primary beam response for frequency %.2f MHz..." % (frequency)

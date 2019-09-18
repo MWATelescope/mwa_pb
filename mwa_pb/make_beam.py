@@ -8,13 +8,12 @@ import astropy.wcs as pywcs
 
 import numpy
 
-import skyfield.api as si
-
-import skyfield_utils as su
-
 import config
 import primary_beam
 
+import astropy
+from astropy.time import Time
+from astropy.coordinates import SkyCoord
 
 # configure the logging
 logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
@@ -37,7 +36,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
        dipheight=primary_beam._DIPOLE_HEIGHT,
        dip_sep=primary_beam._DIPOLE_SEPARATION)
     """
-    su.init_data()
+
     try:
         assert model in ['analytic', '2013', '2014', '2016']
     except AssertionError:
@@ -164,8 +163,8 @@ def make_beam(filename, ext=0, delays=None, jones=False,
     except KeyError:
         logger.error('Unable to read observation date DATE-OBS from %s' % filename)
         if gps > 0:
-            tref = su.time2tai(gps)
-            d = tref.utc_iso(places=3)[:-1]  # Strip trailing timezone character from ISOT string
+            tref = Time(gps, format='gps', scale='utc')
+            d = tref.fits
             print "gps=%d -> d=%s" % (gps, d)
         else:
             logger.error('GPS time not provided either -> cannot continue')
@@ -174,16 +173,16 @@ def make_beam(filename, ext=0, delays=None, jones=False,
     if '.' in d:
         d = d.split('.')[0]
     dt = datetime.datetime.strptime(d, '%Y-%m-%dT%H:%M:%S')
-    dtu = dt.replace(tzinfo=si.utc)
-    mwatime = su.TIMESCALE.utc(dtu)
-    logger.info('Computing for %s UTC (%d)' % (mwatime.utc_iso(places=3)[:-1], su.tai2gps(mwatime)))
-    coords = si.Star(ra=si.Angle(degrees=RA),
-                     dec=si.Angle(degrees=Dec))
-    observer = su.S_MWAPOS.at(mwatime)
-    # TODO - This line will NOT WORK because of an unfixed bug in skyfield!
-    coords_apparent = observer.observe(coords).apparent()
-    coords_alt, coords_az, _ = coords_apparent.altaz()
-    Az, Alt = coords_az.degrees, coords_alt.degrees
+    mwatime = Time(dt)
+    logger.info('Computing for %s UTC (%d)' % (mwatime.iso, mwatime.gps))
+    coords = SkyCoord(ra=RA,
+                      dec=Dec,
+                      equinox='J2000',
+                      unit=(astropy.units.deg, astropy.units.deg))
+    coords.location = config.MWAPOS
+    coords.obstime = mwatime
+    coords_prec = coords.transform_to('altaz')
+    Az, Alt = coords_prec.az.deg, coords_prec.alt.deg
 
     # go from altitude to zenith angle
     theta = numpy.radians((90 - Alt))
@@ -288,7 +287,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
     if jones:
         root = os.path.splitext(filename)[0]
         outnames = []
-        # Why is this XX not XTHETA?
+        # TODO: Why is this XX not XTHETA?
         pols = [['XX', -5, 0, 0],
                 ['XY', -7, 0, 1],
                 ['YX', -6, 1, 0],

@@ -305,8 +305,8 @@ class Beam(object):
                 name = '%s%s_%s' % (pols[pol], ant_i + 1, self.AA.freq)
 
                 # find maximum length
-                if self.AA.h5f[name].shape[1] / 2 > max_length:
-                    max_length = self.AA.h5f[name].shape[1] / 2
+                if self.AA.h5f[name].shape[1] // 2 > max_length:
+                    max_length = self.AA.h5f[name].shape[1] // 2
 
             # accumulating spherical harmonics coefficients for the array
             # initialize
@@ -329,7 +329,7 @@ class Beam(object):
 
                 # current length
                 my_len = np.max(Q_all.shape)
-                my_len_half = my_len / 2
+                my_len_half = my_len // 2
 
                 Q_modes = Q_modes_all[0:my_len, :]  # Get modes for this antenna
 

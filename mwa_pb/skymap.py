@@ -19,6 +19,8 @@ import astropy
 from astropy.coordinates import Latitude, Longitude   # Used for parsing sexagesimal strings
 from astropy.table import Table
 from astropy.io import fits
+from astropy.time import Time
+from astropy.coordinates import SkyCoord
 
 import matplotlib
 
@@ -257,12 +259,12 @@ class SkyData(object):
 
         # Solar system bodies to plot
         # includes size in pixels and color
-        self.bodies = {su.PLANETS['Sun']:[120, 'yellow', 'Sun'],
-                       su.PLANETS['Jupiter']:[60, 'cyan', 'Jupiter'],
-                       su.PLANETS['Moon']:[120, 'lightgray', 'Moon'],
-                       su.PLANETS['Mars']:[30, 'red', 'Mars'],
-                       su.PLANETS['Venus']:[40, 'violet', 'Venus'],
-                       su.PLANETS['Saturn']:[50, 'skyblue', 'Saturn']}
+        self.bodies = {su.PLANETS['SUN']:[120, 'yellow', 'Sun'],
+                       su.PLANETS['JUPITER BARYCENTER']:[60, 'cyan', 'Jupiter'],
+                       su.PLANETS['MOON']:[120, 'lightgray', 'Moon'],
+                       su.PLANETS['MARS BARYCENTER']:[30, 'red', 'Mars'],
+                       su.PLANETS['VENUS BARYCENTER']:[40, 'violet', 'Venus'],
+                       su.PLANETS['SATURN BARYCENTER']:[50, 'skyblue', 'Saturn']}
 
         try:
             fname = os.path.join(config.RADIO_IMAGE_FILE)
@@ -312,22 +314,29 @@ def plot_MWAconstellations(outfile=None,
         elif '0' in obsinfo['rfstreams']:
             channel = obsinfo['rfstreams']['0']['frequencies'][12]
 
-    obstime = su.time2tai(obsinfo['starttime'])
+    s_obstime = su.time2tai(obsinfo['starttime'])
+    a_obstime = Time(obsinfo['starttime'], format='gps', scale='utc')
 
     if viewgps is None:
-        viewtime = obstime
+        s_viewtime = s_obstime
+        a_viewtime = a_obstime
     else:
-        viewtime = su.time2tai(viewgps)
+        s_viewtime = su.time2tai(viewgps)
+        a_viewtime = Time(viewgps, format='gps', scale='utc')
 
-    observer = su.S_MWAPOS.at(viewtime)
-    LST_hours = viewtime.gmst + (su.MWA_TOPO.longitude.degrees / 15)
+    a_viewtime.delta_ut1_utc = 0  # We don't care about IERS tables and high precision answers
+    LST_hours = a_viewtime.sidereal_time(kind='apparent', longitude=config.MWAPOS.longitude)
 
-    # TODO - This line will NOT WORK because of an unfixed bug in skyfield!
-    mapzenith = si.Star(ra=si.Angle(degrees=skydata.skymapRA),
-                        dec=si.Angle(degrees=skydata.skymapDec))
-    mapzenith_app = observer.observe(mapzenith).apparent()
-    mzalt_a, mzaz_a, _ = mapzenith_app.altaz()
-    Az, Alt = mzaz_a.degrees, mzalt_a.degrees
+    observer = su.S_MWAPOS.at(s_viewtime)
+
+    mapzenith = SkyCoord(ra=skydata.skymapRA,
+                         dec=skydata.skymapDec,
+                         equinox='J2000',
+                         unit=(astropy.units.deg, astropy.units.deg))
+    mapzenith.location = config.MWAPOS
+    mapzenith.obstime = a_viewtime
+    altaz = mapzenith.transform_to('altaz')
+    Az, Alt = altaz.az.deg, altaz.alt.deg
 
     fig = plt.figure(figsize=(FIGSIZE * plotscale, FIGSIZE * plotscale), dpi=DPI)
     ax1 = fig.add_subplot(1, 1, 1)
@@ -362,7 +371,7 @@ def plot_MWAconstellations(outfile=None,
                 beamcolor = ((0.5, 0.5, 0.5), (0.75, 0.75, 0.75), (1.0, 1.0, 1.0))
 
         # If the observation is in the future, calculate what delays will be used, instead of using the recorded actual delays
-        if su.tai2gps(obstime) > su.tai2gps(su.time2tai()) + 10:
+        if su.tai2gps(s_obstime) > su.tai2gps(su.time2tai()) + 10:
             if 0 in obsinfo['rfstreams']:
                 delays = calc_delays(az=obsinfo['rfstreams'][0]['azimuth'], el=obsinfo['rfstreams'][0]['elevation'])
             elif '0' in obsinfo['rfstreams']:
@@ -463,8 +472,8 @@ def plot_MWAconstellations(outfile=None,
         color = skydata.bodies[b][1]
         size = skydata.bodies[b][0]
         body_app = observer.observe(b).apparent()
-        body_ra_a, body_dec_a = body_app.radec()
-        ra, dec = map(numpy.degrees, (body_ra_a._degrees, body_dec_a.degrees))
+        body_ra_a, body_dec_a, _ = body_app.radec()
+        ra, dec = body_ra_a._degrees, body_dec_a.degrees
         newx, newy = bmap(ra, dec)
         testx, testy = bmap(newx, newy, inverse=True)
         if testx < 1e30 and testy < 1e30:
@@ -524,7 +533,7 @@ def plot_MWAconstellations(outfile=None,
             ax1.text(0, bmap.ymax - 2e5,
                      'Obs ID %d with delays %s\n at %s:\n%s at %d MHz\n in the constellation %s' % (obsinfo['starttime'],
                                                                                                     delays,
-                                                                                                    obstime.datetime.strftime('%Y-%m-%d %H:%M UT'),
+                                                                                                    a_obstime.datetime.strftime('%Y-%m-%d %H:%M UT'),
                                                                                                     obsinfo['obsname'],
                                                                                                     channel * 1.28,
                                                                                                     constellation[1]),
@@ -532,7 +541,7 @@ def plot_MWAconstellations(outfile=None,
                      color=fontcolor)
         else:
             ax1.text(0, bmap.ymax - 2e5,
-                     '%s:\nNo recent observation' % (obstime.datetime.strftime('%Y-%m-%d %H:%M UT')),
+                     '%s:\nNo recent observation' % (a_obstime.datetime.strftime('%Y-%m-%d %H:%M UT')),
                      fontsize=10 * plotscale,
                      color=fontcolor)
 
