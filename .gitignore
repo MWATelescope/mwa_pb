@@ -1,6 +1,8 @@
+*.xml
 *.pyc
-*~
-*.o
-.project
+*.h5
 .idea
+build
+dist
+mwa_pb.egg-info
 
