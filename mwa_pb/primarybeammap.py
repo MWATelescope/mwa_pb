@@ -274,6 +274,8 @@ def make_primarybeammap(datetimestring, delays, frequency,
         satellite_label = tlelines[0].replace('_', r'\_').replace('\n', '')
         satellite = si.EarthSatellite(tlelines[1], tlelines[2], name=tlelines[0], ts=su.TIMESCALE)
         ra_sat, dec_sat, time_sat, sublong_sat, sublat_sat = satellite_positions(satellite,
+                                                                                 a_obstime.gps,
+                                                                                 range(0, duration, 1),
                                                                                  RA0=RA0)
 
     # do the plotting
