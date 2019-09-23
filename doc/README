@@ -119,6 +119,10 @@
       python ./mwa_sensitivity.py -f 185.6 --model 2016 --pointing_za_deg 5 --pointing_az_deg 0 --antnum=60 --inttime=120 -p all --gridpoint=0 -g 1193567480
 
 
+- generate beam based on delays (not sky image to be corrected) : 
+
+   python ./primarybeammap_tant_test.py --channel=121 --gps=1241740817 --model=full_EE --plottype=all
+
 - Calculation of Jones matrix for any direction :
     Az=90 deg, zenith angle = 45 deg , freq = 185 MHz :
     python calc_jones.py  --az=90 --za=45 --freq=185 

@@ -4,7 +4,7 @@ setup(
   name='mwa_pb',
   version='1.1.0',
   packages=['mwa_pb'],
-  package_data={'mwa_pb':['data/*.fits', 'data/*.txt', 'data/*.h5']},
+  package_data={'mwa_pb':['data/*.fits', 'data/*.txt', 'data/*.h5', 'data/*.fab', 'data/*.dat']},
   url='https://github.com/MWATelescope/mwa_pb',
   license='GPLv3',
   author='MWA Team members, repo managed by Andrew Williams',
@@ -15,7 +15,8 @@ setup(
            'scripts/calc_jones.py',
            'scripts/make_beam_test.py',
            'scripts/mwa_sensitivity.py',
+           'scripts/plot_skymap.py',
            'scripts/primarybeammap_tant_test.py',
            'scripts/track_and_suppress.py'],
-  install_requires=["numpy", "astropy", "matplotlib", "scipy", "ephem", "h5py"]
+  install_requires=["numpy", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "ephem", "h5py", "Pillow"]
 )

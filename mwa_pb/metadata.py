@@ -15,7 +15,7 @@ except ImportError:
 import json
 
 # Append the service name to this base URL, eg 'con', 'obs', etc.
-BASEURL = 'http://mwa-metadata01.pawsey.org.au/'
+BASEURL = 'http://ws.mwatelescope.org/'
 
 
 # Function to call a JSON web service and return a dictionary:
@@ -44,8 +44,8 @@ def getmeta(servicetype='metadata', service='obs', params=None):
 def get_observation(obsid=None):
     """Get an observation structure from the metadata web service, given an obsid.
     """
-    if not obsid:
-        return None
-
-    obs = getmeta(servicetype='metadata', service='obs', params={'obs_id': obsid})
+    if obsid is None:
+        obs = getmeta(servicetype='metadata', service='obs')
+    else:
+        obs = getmeta(servicetype='metadata', service='obs', params={'obs_id': obsid})
     return obs

@@ -32,7 +32,7 @@ logger.setLevel(logging.DEBUG)
 
 
 ######################################################################
-def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0, gps=0):
+def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0.0, gps=0):
     """
     Get frequency & az & ZA arrays from fits file
     """
@@ -148,8 +148,8 @@ def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0, gps=0):
         logger.error('Unable to read observation date DATE-OBS from %s' % filename)
 
         if gps > 0:
-            time = Time(gps, format='gps', scale='utc')
-            d = time.fits
+            tref = Time(gps, format='gps', scale='utc')
+            d = tref.fits
             print("gps=%d -> d=%s" % (gps, d))
         else:
             logger.error('GPS time not provided either -> cannot continue')
@@ -539,23 +539,28 @@ if __name__ == "__main__":
 
     delays = None
     # if nothing set for delays in options, but metafits is provided -> use info from metafits
-    if options.metafits is not None and options.delays is None:
-        print("here ???")
+    if options.metafits is not None and ( options.delays is None or options.freq_mhz is None or options.freq_mhz == 0 ):
         try:
             f = pyfits.open(options.metafits)
         except Exception as e:
             logger.error('Unable to open FITS file %s: %s' % (options.metafits, e))
             sys.exit(1)
-        if 'DELAYS' not in list(f[0].header.keys()):
-            logger.error('Cannot find DELAYS in %s' % options.metafits)
-            sys.exit(1)
-        options.delays = f[0].header['DELAYS']
-        print("DEBUG : options.delays = %s" % (options.delays))
-        try:
-            delays = [int(x) for x in options.delays.split(',')]
-        except Exception as e:
-            logger.error('Unable to parse beamformer delays %s: %s' % (options.delays, e))
-            sys.exit(1)
+
+        if options.delays is None:
+            if 'DELAYS' not in list(f[0].header.keys()):
+                logger.error('Cannot find DELAYS in %s' % options.metafits)
+                sys.exit(1)
+            options.delays = f[0].header['DELAYS']
+            print("DEBUG : options.delays = %s" % (options.delays))
+            try:
+                delays = [int(x) for x in options.delays.split(',')]
+            except Exception as e:
+                logger.error('Unable to parse beamformer delays %s: %s' % (options.delays, e))
+                sys.exit(1)
+
+        if options.freq_mhz is None or options.freq_mhz == 0:
+            centfreq = f[0].header['CENTCHAN']
+            options.freq_mhz = int( centfreq ) * 1.28   # convert coarse channel to MHz
 
     # if still nothing in options.delays (metafits not provided) -> use zenith delays
     if options.delays is None:

@@ -146,7 +146,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
         freq = freq[numpy.isfinite(freq)][0]
     else:
         freq = freq_mhz * 1000000
-        print(("Frequency set to %.2f Hz" % freq))
+        print("Frequency set to %.2f Hz" % freq)
 
     if nfreq > 1:
         frequencies = numpy.arange(nfreq) * df + freq
@@ -163,9 +163,9 @@ def make_beam(filename, ext=0, delays=None, jones=False,
     except KeyError:
         logger.error('Unable to read observation date DATE-OBS from %s' % filename)
         if gps > 0:
-            time = Time(gps, format='gps', scale='utc')
-            d = time.fits
-            print(("gps=%d -> d=%s" % (gps, d)))
+            tref = Time(gps, format='gps', scale='utc')
+            d = tref.fits
+            print("gps=%d -> d=%s" % (gps, d))
         else:
             logger.error('GPS time not provided either -> cannot continue')
             return None

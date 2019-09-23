@@ -4,6 +4,7 @@
 Randall Wayth. March 2014, based on the work of Adrian Sutinjo.
 """
 
+import copy
 import logging
 
 import numpy
@@ -21,17 +22,20 @@ logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger(__name__)  # default logger level is WARNING
 
 # locations of dipoles in tile
-dipole_sep = config.DIPOLE_SEPARATION  # meters
-x_offsets = numpy.array([-1.5, -0.5, 0.5, 1.5,
+DIPOLE_SEP = config.DIPOLE_SEPARATION  # meters
+X_OFFSETS = numpy.array([-1.5, -0.5, 0.5, 1.5,
                          -1.5, -0.5, 0.5, 1.5,
                          -1.5, -0.5, 0.5, 1.5,
                          -1.5, -0.5, 0.5, 1.5],
-                        dtype=numpy.float32) * dipole_sep
-y_offsets = numpy.array([1.5, 1.5, 1.5, 1.5,
+                        dtype=numpy.float32) * DIPOLE_SEP
+Y_OFFSETS = numpy.array([1.5, 1.5, 1.5, 1.5,
                          0.5, 0.5, 0.5, 0.5,
                          -0.5, -0.5, -0.5, -0.5,
                          -1.5, -1.5, -1.5, -1.5],
-                        dtype=numpy.float32) * dipole_sep
+                        dtype=numpy.float32) * DIPOLE_SEP
+
+# DIPOLE_DEFAULT = None            # Will contain a default Dipole('lookup') object
+# APERTURE_ARRAY_DEFAULT = None    # Will contain a default ApertureArray object
 
 
 class Dipole(object):
@@ -42,7 +46,7 @@ class Dipole(object):
                  height=0.29,
                  length=0.74,
                  lookup_filename=config.Jmatrix,
-                 gain=numpy.eye(2, dtype=numpy.complex64)):
+                 gain=None):
         """
           General dipole object. Dual pol crossed dipole.
           Assumes a groundscreen with dipole height meters above ground.
@@ -58,7 +62,10 @@ class Dipole(object):
         self.atype = atype
         self.height = height
         self.length = length
-        self.gain = gain
+        if gain is None:
+            self.gain = numpy.eye(2, dtype=numpy.complex64)
+        else:
+            self.gain = gain
         self.interp_freq = 0.0
         self.lookup = None
         self.lookup_za = None
@@ -236,10 +243,13 @@ class Dipole(object):
         return "Dipole. Type: " + self.atype + ". height: " + str(self.height) + "m. Gain: " + str(self.gain)
 
 
+DIPOLE_DEFAULT = Dipole('lookup')      # A default Dipole('lookup') object. FOr thread safety, copy.deepcopy this global object
+
+
 class ApertureArray(object):
     """Aperture array antenna object"""
 
-    def __init__(self, dipoles=None, xpos=x_offsets, ypos=y_offsets):
+    def __init__(self, dipoles=None, xpos=None, ypos=None):
         """Constructor for aperture array station. xpos and ypos are arrays with
         the coords of the dipoles (meters) in local coords relative to centre of
         the antenna looking down on the station. Ordering goes left to right, top to bottom,
@@ -249,16 +259,22 @@ class ApertureArray(object):
         if dipoles is None:
             d = Dipole(atype='short')
             dipoles = [d] * 16
+        if xpos is None:
+            xpos = X_OFFSETS
+        if ypos is None:
+            ypos = Y_OFFSETS
         self.dipoles = dipoles
         self.xpos = xpos
         self.ypos = ypos
         self.im = mwa_impedance.TileImpedanceMatrix()
         self.lna_z = mwa_impedance.LNAImpedance()
 
-    def getPortCurrents(self, freq, delays=numpy.zeros((2, 16), dtype=numpy.float32)):
+    def getPortCurrents(self, freq, delays=None):
         """
         Return the port currents on a tile given the freq (Hz) and delays (integer)
         """
+        if delays is None:
+            delays = numpy.zeros((2, 16), dtype=numpy.float32)
         lam = vel_light / freq
         phases = -2.0 * numpy.pi * delays * (DQ / lam)
         ph_rot = numpy.cos(phases) + 1.0j * numpy.sin(phases)
@@ -269,7 +285,7 @@ class ApertureArray(object):
         port_current = numpy.dot(inv_z, ph_rot.reshape(32)).reshape(2, 16)
         return port_current
 
-    def getArrayFactor(self, az, za, freq=155e6, delays=numpy.zeros((2, 16), dtype=numpy.float32)):
+    def getArrayFactor(self, az, za, freq=155e6, delays=None):
         """
         Get the scalar array factor response of the array for a given
         freq (Hz) and delay settings.
@@ -279,6 +295,8 @@ class ApertureArray(object):
         respectively.
         Result are in same coords as the az/za input arrays
         """
+        if delays is None:
+            delays = numpy.zeros((2, 16), dtype=numpy.float32)
         lam = vel_light / freq
         port_current = self.getPortCurrents(freq, delays)
 
@@ -335,7 +353,14 @@ class ApertureArray(object):
         return j
 
 
-def convertJonesAzEl2HaDec(az, za, dec, lat):
+APERTURE_ARRAY_DEFAULT = ApertureArray(dipoles=[DIPOLE_DEFAULT] * 16)
+
+
+def get_AA_Cached():
+    return copy.deepcopy(APERTURE_ARRAY_DEFAULT)
+
+
+def convertJonesAzEl2HaDec(az, za, lat):
     """
     Generate a converter for arrays of Jones matrices in Az/ZA to HA/DEC.
     This is a rotation of the orthogonal az/za unit vectors to

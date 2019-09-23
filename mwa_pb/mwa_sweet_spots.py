@@ -210,7 +210,9 @@ all_grid_points = {
 }
 
 
-def find_closest_gridpoint(az_deg, za_deg, gridpoint_list=all_grid_points):
+def find_closest_gridpoint(az_deg, za_deg, gridpoint_list=None):
+    if gridpoint_list is None:
+        gridpoint_list = all_grid_points
     best = gridpoint_list[0]
     deg2rad = math.pi / 180.00
 
@@ -235,17 +237,18 @@ def find_closest_gridpoint(az_deg, za_deg, gridpoint_list=all_grid_points):
     return best
 
 
-def get_delays(gridpoint_idx, gridpoint_list=all_grid_points, raw_delays=False):
-    for idx in gridpoint_list:
-        gridpoint = gridpoint_list[idx]
-        if gridpoint[0] == gridpoint_idx:
-            delays = gridpoint[4]
-            if raw_delays:
-                return delays
+def get_delays(gridpoint_idx, gridpoint_list=None, raw_delays=False):
+    if gridpoint_list is None:
+        gridpoint_list = all_grid_points
+    if gridpoint_idx not in gridpoint_list:
+        return None
 
-            return np.vstack((delays, delays))
-
-    return None
+    gridpoint = gridpoint_list[gridpoint_idx]
+    delays = gridpoint[4]
+    if raw_delays:
+        return delays
+    else:
+        return np.vstack((delays, delays))
 
 
 if __name__ == '__main__':
@@ -259,9 +262,9 @@ if __name__ == '__main__':
 
     print(("Find gridspot for (az,za) = (%.4f,%.4f) [deg]" % (az, za)))
 
-    gridpoint = find_closest_gridpoint(az, za)
-    print(gridpoint)
+    gp = find_closest_gridpoint(az, za)
+    print(gp)
 
-    delays = get_delays(gridpoint[0])
-    print(("Delays for gridpoint %d = %s" % (gridpoint[0], delays)))
-    print(("(Az,za) for gridpoint %d = %.8f,%.8f [deg]" % (gridpoint[0], gridpoint[1], gridpoint[3])))
+    gpdelays = get_delays(gp[0])
+    print("Delays for gridpoint %d = %s" % (gp[0], gpdelays))
+    print("(Az,za) for gridpoint %d = %.8f,%.8f [deg]" % (gp[0], gp[1], gp[3]))

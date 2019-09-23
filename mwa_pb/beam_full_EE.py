@@ -59,8 +59,21 @@ except ImportError:
 deg2rad = math.pi / 180
 rad2deg = 180 / math.pi
 
+AACACHE = {}    # Contains cached ApartureArray objects - the key is frequency in Hertz
 
-# Todo: check scipy.__version__ >= '0.15.1'
+# load default h5file on startup to save time
+if not os.path.exists(config.h5file):
+    logger.error('Cannot find beam model file %s' % config.h5file)
+    H5FILE = None
+    H5FREQS = []
+else:
+    logger.debug('Loading beam model from file %s' % config.h5file)
+    logger.debug("H5 file (%s) version = %s" % (config.h5file, config.h5fileversion))
+    H5FILE = h5py.File(config.h5file, 'r')
+    H5FREQS = np.array([int(x[3:]) for x in H5FILE.keys() if 'X1_' in x])
+    H5FREQS.sort()
+
+# scipy.__version__ >= '0.15.1' should be satisfied by the package setup.py file
 
 
 class ApertureArray(object):
@@ -80,29 +93,31 @@ class ApertureArray(object):
         logger.info('This new beam model is still being tested and is not an official release')
         logger.info('Code version date: 2017-07-20 (Sigma_P sign flipped standalone version)')
 
-        # load h5file
+        self.n_ant = n_ant
+        self.norm_fac = None
+
+        # If the h5 file isn't there, raise an IOError
         if not os.path.exists(h5filepath):
-            logger.error('Cannot file beam model file %s' % h5filepath)
-            self.h5f = None
+            logger.error('Fatal error - h5 file not found at specified location: %s' % h5filepath)
+            raise IOError, 'h5 file not found at specified location: %s' % h5filepath
+        # If we were passed the name of the default h5 file, and it exists, use the pre-loaded copy for speed
+        elif h5filepath == config.h5file:
+            self.h5f = H5FILE
+            self.h5_file_version = config.h5fileversion
+            freqs = H5FREQS
+        # If we were passed a filename that's not the default h5 file, load it now
         else:
             logger.debug('Loading beam model from file %s' % h5filepath)
             self.h5f = h5py.File(h5filepath, 'r')
-
-        # read and log version information :
-        self.h5_file_version = config.h5fileversion
-        logger.debug("H5 file (%s) version = %s" % (h5filepath, self.h5_file_version))
-
-        # Find available frequencies in h5 file
-        freqs = np.array([int(x[3:]) for x in list(self.h5f.keys()) if 'X1_' in x])
-        freqs.sort()
+            self.h5_file_version = None    # Unknown, can't use the version in the config module.
+            # Find available frequencies in h5 file
+            freqs = np.array([int(x[3:]) for x in list(self.h5f.keys()) if 'X1_' in x])
+            freqs.sort()
 
         # find the nearest freq lookup table
         pos = np.argmin(np.abs(freqs - target_freq_Hz))
         self.freq = freqs[pos]
         logger.info("%s MHz requested, selecting nearest freq: %s MHz" % (target_freq_Hz / 1.e6, self.freq / 1.e6))
-
-        self.n_ant = n_ant
-        self.norm_fac = None
 
     def calc_zenith_norm_fac(self):
         """Calculate normalisation factors for the Jones vector for this
@@ -141,7 +156,7 @@ class ApertureArray(object):
            Input:
              j - Jones matrix for one or more spherical cordinates
         """
-        if not self.norm_fac:
+        if self.norm_fac is None:
             self.calc_zenith_norm_fac()
         # Resize to extra dimensions for subsequent broadcasting during normalisation
         mynorm_fac = np.copy(self.norm_fac)
@@ -151,9 +166,27 @@ class ApertureArray(object):
         # return j    # normalisation turned off for tests
 
 
+def get_AA_Cached(target_freq_Hz=None):
+    """
+    Create an ApertureArray object with the default h5file path and n_ant, pre-calculate the zenith_norm_fac, and
+    cache it to use next time the saem target_freq_Hz is requested.
+
+    :param target_freq_Hz: Frequency in Hertz
+    :return: an ApartureArray object
+    """
+    if target_freq_Hz in AACACHE:
+        return AACACHE[target_freq_Hz]
+    else:
+        a = ApertureArray(config.h5file, target_freq_Hz)
+        a.calc_zenith_norm_fac()
+        AACACHE[target_freq_Hz] = a
+        return a
+
+
 class Beam(object):
     def __init__(self, AA, delays=None, amps=None):
-        """Constructor for aperture array beam of given pointing direction
+        """
+        Constructor for aperture array beam of given pointing direction
         and angular resolution.
         Spherical harmonics modes and coefficients are accumulated for
         a pointing defined by delays and amps.
@@ -190,56 +223,56 @@ class Beam(object):
 
         self.AA = AA
 
-        if delays is None:
-            delays = np.zeros([2, 16])
-
         if amps is None:
             amps = np.ones([2, 16])
+        else:
+            # Check valid amplitudes
+            try:
+                if isinstance(amps, list):
+                    amps = np.array(amps)
+                if amps.shape == (16,):
+                    logger.warning('Assuming set of 16 antenna amplitudes are apply to both X Y dipoles')
+                    amps = np.tile(amps, (2, 1))
+            except Exception:
+                e = 'Unable to convert amplitudes "%s" to shape (2,16)' % (amps)
+                logger.error(e)
+                raise ValueError(e)
+            if amps.shape != (2, 16):
+                e = 'Amplitudes "%s" are not shape (2,16)' % (amps)
+                logger.error(e)
+                raise ValueError(e)
 
-        # Check valid amplitudes
-        try:
-            if isinstance(amps, list):
-                amps = np.array(amps)
-            if amps.shape == (16,):
-                logger.warning('Assuming set of 16 antenna amplitudes are apply to both X Y dipoles')
-                amps = np.tile(amps, (2, 1))
-        except Exception:
-            e = 'Unable to convert amplitudes "%s" to shape (2,16)' % (amps)
-            logger.error(e)
-            raise ValueError(e)
-        if amps.shape != (2, 16):
-            e = 'Amplitudes "%s" are not shape (2,16)' % (amps)
-            logger.error(e)
-            raise ValueError(e)
+        if delays is None:
+            delays = np.zeros([2, 16])
+        else:
+            #       #TODO: read number of antennas (i.e. delays) from h5 file
+            # Check valid delays
+            try:
+                if isinstance(delays, list):
+                    delays = np.array(delays)
+                if delays.shape == (16,):
+                    logger.warning('Assuming set of 16 antenna delays apply to both X and Y dipoles')
+                    delays = np.tile(delays, (2, 1))
+            except Exception:
+                e = 'Unable to convert delays "%s" to shape (2,16)' % (delays)
+                logger.error(e)
+                raise ValueError(e)
+            if delays.shape != (2, 16):
+                e = 'Delays "%s" are not shape (2,16)' % (delays)
+                logger.error(e)
+                raise ValueError(e)
 
-        #       #TODO: read number of antennas (i.e. delays) from h5 file
-        # Check valid delays
-        try:
-            if isinstance(delays, list):
-                delays = np.array(delays)
-            if delays.shape == (16,):
-                logger.warning('Assuming set of 16 antenna delays apply to both X and Y dipoles')
-                delays = np.tile(delays, (2, 1))
-        except Exception:
-            e = 'Unable to convert delays "%s" to shape (2,16)' % (delays)
-            logger.error(e)
-            raise ValueError(e)
-        if delays.shape != (2, 16):
-            e = 'Delays "%s" are not shape (2,16)' % (delays)
-            logger.error(e)
-            raise ValueError(e)
+            if (delays > 32).any():
+                e = 'There are delays greater than 32: "%s"' % (delays)
+                logger.error(e)
+                raise ValueError(e)
 
-        if (delays > 32).any():
-            e = 'There are delays greater than 32: "%s"' % (delays)
-            logger.error(e)
-            raise ValueError(e)
-
-        # check for terminated dipoles and reset delays and amps
-        terminated = delays == 32
-        if (terminated).any():
-            logger.warning('Terminated dipoles (delay setting 32)... setting amplitude and delay to zero.')
-            delays[terminated] = 0
-            amps[terminated] = 0
+            # check for terminated dipoles and reset delays and amps
+            terminated = delays == 32
+            if (terminated).any():
+                logger.warning('Terminated dipoles (delay setting 32)... setting amplitude and delay to zero.')
+                delays[terminated] = 0
+                amps[terminated] = 0
 
         logger.info('Using delays X=%s, Y=%s' % (delays[0], delays[1]))
         self.delays = delays
@@ -306,7 +339,7 @@ class Beam(object):
                 # only find s1 and s2 for this antenna
                 s1 = np.array(Q_modes[0:my_len, 0] <= 1, dtype=int)
                 s2 = np.array(Q_modes[0:my_len, 0] > 1, dtype=int)
-                
+
                 # grab m,n vectors
                 M = Q_modes[s1, 1]
                 N = Q_modes[s1, 2]
@@ -318,9 +351,8 @@ class Beam(object):
                     Nmax = np.max(N_accum)
 
                 # grab Q1mn and Q2mn and make them complex
-                for qi in range(my_len_half):
-                    Q1[qi] = Q_all[s1[qi], 0] * np.exp(1.0j * Q_all[s1[qi], 1] * deg2rad)
-                    Q2[qi] = Q_all[s2[qi], 0] * np.exp(1.0j * Q_all[s2[qi], 1] * deg2rad)
+                Q1[0:my_len_half] = Q_all[s1, 0] * np.exp(1.0j * Q_all[s1, 1] * deg2rad)
+                Q2[0:my_len_half] = Q_all[s2, 0] * np.exp(1.0j * Q_all[s2, 1] * deg2rad)
 
                 # accumulate Q1 and Q2, scaled by excitation voltage
                 Q1_accum += Q1 * Vcplx[ant_i]
@@ -424,8 +456,7 @@ class Beam(object):
         logger.debug('Calculating gridded beam (Az=0-360, ZA=0-90) at angular resolution %s pixels per degree... %s' %
                      (pixels_per_deg, datetime.datetime.now().time()))
         if pixels_per_deg < 5:
-            logger.warning(
-                "Resolution along theta, phi axes is less than 5 pixels per degree. Results may be less reliable")
+            logger.warning("Resolution along theta, phi axes is less than 5 pixels per degree. Results may be less reliable")
 
             # Calculate beam for a phi (NtE), theta grid with angular resolution specified by pixels_per_deg.
         mygrid = get_grid('rad', pixels_per_deg)
@@ -629,8 +660,7 @@ def P1sin_array(nmax, theta):
         # in theory, fetching for all n in one go should also be possible
         P = lpmv(orders, n, u)
         # P_{n}^{|m|+1} (u)
-        Pm1 = np.vstack([P[1::, :], np.zeros(
-            (1, np.size(theta)))])  # I should just be able to use orders=np.arange(1,n+1), then append zero?
+        Pm1 = np.vstack([P[1::, :], np.zeros((1, np.size(theta)))])  # I should just be able to use orders=np.arange(1,n+1), then append zero?
         # Pm1=Pm1.reshape(len(Pm1),1)   # FIXME: can probably make this and others 1-D
         # P_{n}^{|m|}(u)/sin_th
         # Pm_sin=np.zeros((n+1,1),dtype=np.complex128) #initialize
