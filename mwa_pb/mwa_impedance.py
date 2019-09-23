@@ -212,8 +212,15 @@ if __name__ == "__main__":
     # delays = numpy.zeros(32)
     # set delays for 14 degs off zenith along meridian
     za = "14"
-    delays = numpy.array(
-        [6, 6, 6, 6, 4, 4, 4, 4, 2, 2, 2, 2, 0, 0, 0, 0, 6, 6, 6, 6, 4, 4, 4, 4, 2, 2, 2, 2, 0, 0, 0, 0])
+    delays = numpy.array([6, 6, 6, 6,
+                          4, 4, 4, 4,
+                          2, 2, 2, 2,
+                          0, 0, 0, 0,
+
+                          6, 6, 6, 6,
+                          4, 4, 4, 4,
+                          2, 2, 2, 2,
+                          0, 0, 0, 0])
     im = TileImpedanceMatrix()
     for i in range(len(freqs)):
         lam = vel_light / fs[i]
@@ -221,7 +228,7 @@ if __name__ == "__main__":
         ph_rot = numpy.cos(phases) + 1j * numpy.sin(phases)
         z_total = im.getImpedanceMatrix(fs[i]) + numpy.eye(32) * z.getZ(fs[i])
         inv_z = numpy.linalg.inv(z_total)
-        current = numpy.dot(inv_z, ph_rot).reshape(2, 4, 4)
+        current = numpy.dot(inv_z, ph_rot).reshape((2, 4, 4))
 
         # to plot the Z_total mag and phase
         plt.imshow(numpy.abs(z_total), interpolation='nearest', cmap=plt.cm.get_cmap('gist_stern'))

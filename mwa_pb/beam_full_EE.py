@@ -99,7 +99,7 @@ class ApertureArray(object):
         # If the h5 file isn't there, raise an IOError
         if not os.path.exists(h5filepath):
             logger.error('Fatal error - h5 file not found at specified location: %s' % h5filepath)
-            raise IOError, 'h5 file not found at specified location: %s' % h5filepath
+            raise IOError('h5 file not found at specified location: %s' % h5filepath)
         # If we were passed the name of the default h5 file, and it exists, use the pre-loaded copy for speed
         elif h5filepath == config.h5file:
             self.h5f = H5FILE
@@ -483,7 +483,7 @@ class Beam(object):
     def get_FF(self, phi_arr, theta_arr, grid):
         """
         Converts the beam object's spherical harmonics to a Jones matrix of
-        an E-field (polarized in \hat{theta} and \hat{phi}).
+        an E-field (polarized in hat{theta} and hat{phi}).
 
         Input:
         phi_arr - Array of azimuth angles (radians), north through east

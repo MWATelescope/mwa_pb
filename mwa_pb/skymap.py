@@ -11,8 +11,6 @@ warnings.filterwarnings("ignore")
 
 import numpy
 
-import skyfield.api as si
-
 import ephem   # Only used to look up what constellation a given ra/dec is in
 
 import astropy
@@ -32,10 +30,10 @@ try:
     from mpl_toolkits.basemap import Basemap
 except ImportError:
     Basemap = None
-    print "Basemap not found - install it with:"
-    print "    sudo apt-get install libgeos-3.6.2 libgeos-c1v5 libgeos-dev"
-    print "    pip install --user git+https://github.com/matplotlib/basemap.git"
-    print "    (or 'conda install basemap' if using Anaconda Python)"
+    print("Basemap not found - install it with:")
+    print("    sudo apt-get install libgeos-3.6.2 libgeos-c1v5 libgeos-dev")
+    print("    pip install --user git+https://github.com/matplotlib/basemap.git")
+    print("    (or 'conda install basemap' if using Anaconda Python)")
 
 from PIL import Image
 
@@ -415,7 +413,7 @@ def plot_MWAconstellations(outfile=None,
         # plot the constellations
         ConstellationStars = []
         for c in skydata.constellations.keys():
-            for i in xrange(0, len(skydata.constellations[c][1]), 2):
+            for i in range(0, len(skydata.constellations[c][1]), 2):
                 i1 = numpy.where(skydata.hip['HIP'] == skydata.constellations[c][1][i])[0][0]
                 i2 = numpy.where(skydata.hip['HIP'] == skydata.constellations[c][1][i + 1])[0][0]
                 star1 = skydata.hip[i1]
@@ -573,7 +571,7 @@ def plot_MWAconstellations(outfile=None,
                 buf2 = io.BytesIO()
                 im.save(buf2, format=outfile[outfile.find('.') + 1:].upper())
                 buf2.seek(0)
-                outf = open(outfile, 'w')
+                outf = open(outfile, 'wb')
                 outf.write(buf2.read())
                 return ''
         else:

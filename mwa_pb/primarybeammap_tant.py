@@ -417,9 +417,9 @@ def add_sources(fig, ax1, ax2, obstime=None, az_grid=None, za_grid=None, beamsky
     lst = get_LST(obstime)
 
     print("------------------------------")
-    print("Adding sources for lst=%.2f [hours] , coordinates = (%.4f,%.4f) [deg]:" % (lst,)
+    print("Adding sources for lst=%.2f [hours] , coordinates = (%.4f,%.4f) [deg]:" % (lst,
                                                                                       su.MWA_TOPO.longitude.degrees,
-                                                                                      su.MWA_TOPO.latitude.degrees)
+                                                                                      su.MWA_TOPO.latitude.degrees))
     print("------------------------------")
     # add text for sources
     # lst=get_LST(gps)

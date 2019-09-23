@@ -91,13 +91,16 @@ def time2tai(input_time=None):
         return TIMESCALE.now()
     elif type(input_time) is si.Time:
         return input_time
-    elif type(input_time) in [int, float, long]:  # Must be in GPS seconds
+    elif type(input_time) in [int, float]:  # Must be in GPS seconds
         # Offset at Jan 6, 1980 is 19 seconds.
         return TIMESCALE.tai(jd=2444244.5 + (input_time + 19) / 86400.0)
     elif type(input_time) is astropy.time.Time:
         return TIMESCALE.from_astropy(input_time)
     else:
-        return None
+        try:  # It might be a 'long' type, if we're in Python 2.x
+            return TIMESCALE.tai(jd=2444244.5 + (int(input_time) + 19) / 86400.0)
+        except ValueError:
+            return None
 
 
 def tai2gps(tai=None):

@@ -15,8 +15,13 @@ import logging
 from optparse import OptionParser
 import sys
 
+import skyfield.api as si
+
+from astropy.time import Time
+
 from mwa_pb import config
 from mwa_pb.suppress import get_best_gridpoints_supress_sun, get_best_gridpoints
+import skyfield_utils as su
 
 # configure the logging
 logging.basicConfig(filename='/tmp/suppress.log', format='# %(levelname)s:%(name)s: %(message)s')
@@ -145,6 +150,8 @@ if __name__ == '__main__':
     print("min_elevation = %.2f [deg]" % (options.min_elevation))
     print("######################################################")
 
+    su.init_data()
+
     model = options.model
     if model not in ['analytic', 'advanced', 'full_EE', 'full_EE_AAVS05']:
         logger.error("Model %s not found\n" % model)
@@ -229,10 +236,14 @@ if __name__ == '__main__':
 
     for entry in tracklist:
         otime, step, az, alt = entry
-        obstime = Time(otime, format='gps', scale='utc')
-        pos = SkyCoord(az, alt, frame='altaz', unit=(astropy.units.deg, astropy.units.deg), location=config.MWAPOS,
-                       obstime=obstime)
-        posrd = pos.transform_to('icrs')
+
+        t = su.time2tai(otime)
+        observer = su.S_MWAPOS.at(t)
+        pos = observer.from_altaz(alt_degrees=alt,
+                                  az_degrees=az,
+                                  distance=si.Distance(au=9e90))
+        ra_a, dec_a, _ = pos.radec()
+
         if options.radec:
             command = "single_observation.py --creator=%(creator)s --starttime=%(otime)s --stoptime=++%(step)s --freq=%(channel)d,24 "
             command += "--obsname=%(obj)s_%(channel)d --inttime=%(inttime)s --freqres=%(freqres)d --useazel --usegrid= "
@@ -249,8 +260,8 @@ if __name__ == '__main__':
                                  'obj': options.obj,
                                  'inttime': inttime_str,
                                  'freqres': options.freqres,
-                                 'ra': posrd.ra.deg,
-                                 'dec': posrd.dec.deg,
+                                 'ra': ra_a._degrees,
+                                 'dec': dec_a.degrees,
                                  'alt': alt,
                                  'az': az,
                                  'project': options.project})
