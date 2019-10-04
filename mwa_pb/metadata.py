@@ -1,18 +1,15 @@
 """Library to access the MWA metadata web services
 """
 
-# Python3
-try:
+import json
+
+try:   # Python3
     from urllib.parse import urlencode
     from urllib.request import urlopen
     from urllib.error import HTTPError, URLError
-
-# Python2
-except ImportError:
+except ImportError:   # Python2
     from urllib import urlencode
     from urllib2 import urlopen, HTTPError, URLError
-
-import json
 
 # Append the service name to this base URL, eg 'con', 'obs', etc.
 BASEURL = 'http://ws.mwatelescope.org/'

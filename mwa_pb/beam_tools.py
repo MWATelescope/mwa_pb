@@ -2,10 +2,10 @@
 """Tools for transforming and plotting a primary beam generated with beam_full_EE.py.
    Tim Colegate, updated from Randall Wayth's mwa_tile.py.
 """
-import numpy as np
+import logging
 import math
 
-import logging
+import numpy as np
 
 import matplotlib.pyplot as plt
 import scipy.io as io

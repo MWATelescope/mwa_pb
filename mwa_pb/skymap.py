@@ -37,9 +37,9 @@ except ImportError:
 
 from PIL import Image
 
-import config
-import primarybeammap as primarybeammap
-import skyfield_utils as su
+from . import config
+from . import primarybeammap as primarybeammap
+from . import skyfield_utils as su
 
 logging.basicConfig()
 DEFAULTLOGGER = logging.getLogger()

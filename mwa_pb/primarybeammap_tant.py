@@ -24,10 +24,10 @@ from matplotlib import pyplot as pylab
 
 from scipy.interpolate import RegularGridInterpolator
 
-import config
-import beam_tools
-import primary_beam
-import skyfield_utils as su
+from . import config
+from . import beam_tools
+from . import primary_beam
+from . import skyfield_utils as su
 
 EPS = numpy.finfo(numpy.float64).eps  # machine epsilon
 

@@ -3,17 +3,16 @@ import logging
 import os
 import platform
 
-import astropy.io.fits as pyfits
-import astropy.wcs as pywcs
-
 import numpy
-
-from . import config
-from . import primary_beam
 
 import astropy
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
+from astropy.io import fits
+import astropy.wcs as pywcs
+
+from . import config
+from . import primary_beam
 
 # configure the logging
 logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
@@ -55,7 +54,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
         return None
 
     try:
-        f = pyfits.open(filename)
+        f = fits.open(filename)
     except IOError as err:
         logger.error('Unable to open %s for reading\n%s', filename, err)
         return None
@@ -268,7 +267,7 @@ def make_beam(filename, ext=0, delays=None, jones=False,
     else:
         pyver = '0.0'
     f[ext].header.set('PYVER', pyver, 'PYTHON Version number')
-    pyfitsver = pyfits.__dict__.get('__version__', '0.0')
+    pyfitsver = fits.__dict__.get('__version__', '0.0')
     f[ext].header.set('PYFITS', pyfitsver, 'PYFITS Version number')
 
     pywcsver = pywcs.__dict__.get('__version__', '0.0')

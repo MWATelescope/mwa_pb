@@ -17,9 +17,9 @@ import numpy
 
 import skyfield.api as si
 
-import primarybeammap_tant
-import mwa_sweet_spots
-import skyfield_utils as su
+from . import primarybeammap_tant
+from . import mwa_sweet_spots
+from . import skyfield_utils as su
 
 
 # configure the logging

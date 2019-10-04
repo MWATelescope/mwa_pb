@@ -213,28 +213,14 @@ all_grid_points = {
 def find_closest_gridpoint(az_deg, za_deg, gridpoint_list=None):
     if gridpoint_list is None:
         gridpoint_list = all_grid_points
-    best = gridpoint_list[0]
-    deg2rad = math.pi / 180.00
-
-    min_dist = 1e6
-    for idx in gridpoint_list:
-        gridpoint = gridpoint_list[idx]
-        az_gridpoint = gridpoint[1]
-        alt_gridpoint = gridpoint[2]
-        # za_gridpoint = gridpoint[3]
-
-        alt_deg = 90.00 - za_deg
-        diff_az = az_gridpoint - az_deg
-
-        #      dist=math.fabs(za-za_gridpoint)
-        cos_value = (math.sin(alt_gridpoint * deg2rad) * math.sin(alt_deg * deg2rad) +
-                     math.cos(alt_gridpoint * deg2rad) * math.cos(alt_deg * deg2rad) * math.cos(diff_az * deg2rad))
-        dist = math.acos(cos_value)
-        if dist < min_dist:
-            min_dist = dist
-            best = gridpoint
-
-    return best
+    gplist = list(gridpoint_list.values())
+    azdiffs = (np.array([gridpoint[1] for gridpoint in gplist], dtype=np.float32) - az_deg) * math.pi / 180.00
+    alts = np.array([gridpoint[2] for gridpoint in gplist], dtype=np.float32) * math.pi / 180.00
+    alt_deg = (90.00 - za_deg) * math.pi / 180.00
+    coses = (np.sin(alts) * np.sin(alt_deg) +
+             np.cos(alts) * np.cos(alt_deg) * np.cos(azdiffs))
+    dists = np.arccos(coses)
+    return gplist[int(np.argmin(dists))]
 
 
 def get_delays(gridpoint_idx, gridpoint_list=None, raw_delays=False):

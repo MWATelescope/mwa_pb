@@ -337,8 +337,8 @@ class Beam(object):
 
                 # find s=1 and s=2 indices
                 # only find s1 and s2 for this antenna
-                s1 = np.array(Q_modes[0:my_len, 0] <= 1, dtype=int)
-                s2 = np.array(Q_modes[0:my_len, 0] > 1, dtype=int)
+                s1 = Q_modes[0:my_len, 0] <= 1
+                s2 = Q_modes[0:my_len, 0] > 1
 
                 # grab m,n vectors
                 M = Q_modes[s1, 1]

@@ -21,7 +21,7 @@ from astropy.time import Time
 
 from mwa_pb import config
 from mwa_pb.suppress import get_best_gridpoints_supress_sun, get_best_gridpoints
-import skyfield_utils as su
+from mwa_pb import skyfield_utils as su
 
 # configure the logging
 logging.basicConfig(filename='/tmp/suppress.log', format='# %(levelname)s:%(name)s: %(message)s')
