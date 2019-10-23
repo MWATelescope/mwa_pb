@@ -37,7 +37,11 @@ import logging
 import os
 import math
 
-from scipy import misc
+# The following try/except allows older versions of scipy (<1.0.0) to work.
+try:
+    from scipy.special import factorial
+except ImportError:
+    from scipy.misc import factorial
 from scipy.special import lpmv  # associated Legendre function
 
 from astropy.io import fits
@@ -534,7 +538,7 @@ class Beam(object):
             # form pre-multiplying constants in (1) of "Calculating...."
             # Rick 19-12-2016: this is fine for the amount of modes used for the MWA simulations
             # but the factorials explode for higher number of modes!
-            C_MN = (0.5 * (2 * N + 1) * misc.factorial(N - abs(M)) / misc.factorial(N + abs(M))) ** 0.5
+            C_MN = (0.5 * (2 * N + 1) * factorial(N - abs(M)) / factorial(N + abs(M))) ** 0.5
             # Rick 19-12-2016: remove annoying "RuntimeWarning: invalid value encountered in divide, MabsM=-M/np.abs(M) ", caused by:
             # MabsM=-M/np.abs(M)  <----
             # MabsM[MabsM==np.NaN]=1 #for M=0, replace NaN with MabsM=1;
