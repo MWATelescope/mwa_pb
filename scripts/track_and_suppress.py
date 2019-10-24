@@ -20,7 +20,7 @@ import skyfield.api as si
 from astropy.time import Time
 
 from mwa_pb import config
-from mwa_pb.suppress import get_best_gridpoints_supress_sun, get_best_gridpoints
+from mwa_pb.suppress import get_best_gridpoints_suppress_sun, get_best_gridpoints
 from mwa_pb import skyfield_utils as su
 
 # configure the logging
@@ -175,17 +175,17 @@ if __name__ == '__main__':
     step = 8 * int((options.step + 7) / 8)  # Always round up to the next modulo 8 second, not down
 
     if (options.avoid_source_dec_deg is None) or (options.avoid_source_dec_deg is None):
-        tracklist = get_best_gridpoints_supress_sun(gps_start=start_time.gps + 16,  # Add 16 to allow for mode change
-                                                    obs_source_ra_deg=options.obs_source_ra_deg,
-                                                    obs_source_dec_deg=options.obs_source_dec_deg,
-                                                    model=options.model,
-                                                    min_gain=options.min_gain,
-                                                    max_beam_distance_deg=options.max_beam_distance_deg,
-                                                    channel=options.channel,
-                                                    verb_level=1,
-                                                    duration=options.duration,
-                                                    step=step,
-                                                    min_elevation=options.min_elevation)
+        tracklist = get_best_gridpoints_suppress_sun(gps_start=start_time.gps + 16,  # Add 16 to allow for mode change
+                                                     obs_source_ra_deg=options.obs_source_ra_deg,
+                                                     obs_source_dec_deg=options.obs_source_dec_deg,
+                                                     model=options.model,
+                                                     min_gain=options.min_gain,
+                                                     max_beam_distance_deg=options.max_beam_distance_deg,
+                                                     channel=options.channel,
+                                                     verb_level=1,
+                                                     duration=options.duration,
+                                                     step=step,
+                                                     min_elevation=options.min_elevation)
     else:
         tracklist = get_best_gridpoints(gps_start=start_time.gps + 16,  # Add 16 to allow for mode change
                                         obs_source_ra_deg=options.obs_source_ra_deg,

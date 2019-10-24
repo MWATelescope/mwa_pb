@@ -34,13 +34,13 @@ def get_best_gridpoints(gps_start,
                         avoid_source_ra_deg,
                         avoid_source_dec_deg,
                         model="analytic",
-                        min_gain=0.1,
+                        min_gain=None,
                         max_beam_distance_deg=360,
                         channel=145,
                         verb_level=1,
                         duration=3600,
                         step=120,
-                        min_elevation=50.00):
+                        min_elevation=30.00):
     su.init_data()
     frequency = channel * 1.28
 
@@ -71,6 +71,13 @@ def get_best_gridpoints(gps_start,
             logger.debug("Source at %.2f [deg] below minimum elevation = %.2f [deg]  at this time, skip this timestep." % (obs_source_alt.degrees,
                                                                                                                            min_elevation))
             continue  # Source below pointing horizon at this time, skip this timestep.
+
+        if min_gain is None:
+            current_min_gain = 0.5
+            if obs_source_alt < 50:
+                current_min_gain = 0.1
+        else:
+            current_min_gain = min_gain
 
         avoid_source_apparent = observer.observe(avoid_source).apparent()
         avoid_source_alt, avoid_source_az, _ = avoid_source_apparent.altaz()
@@ -129,7 +136,7 @@ def get_best_gridpoints(gps_start,
                 gain_XX_avoid = beam_avoid['XX']
                 r = gain_XX_obs / gain_XX_avoid
 
-                if r > 1.00 and gain_XX_obs > min_gain:
+                if r > 1.00 and gain_XX_obs > current_min_gain:
                     outstring = "\t\tSelected gridpoint = %d at (az,elev) = (%.4f,%.4f) [deg] at (distances %.4f and %.4f deg) "
                     outstring += "-> gain_obs=%.4f and gain_avoid=%.4f -> gain_obs/gain_avoid = %.4f"
                     logger.debug(outstring % (gpnum, gp_azes[i], gp_alts[i], dist_obs, dist_avoid, gain_XX_obs, gain_XX_avoid, r))
@@ -149,7 +156,7 @@ def get_best_gridpoints(gps_start,
                                                   dist_obs,
                                                   dist_avoid,
                                                   gain_XX_obs,
-                                                  min_gain,
+                                                  current_min_gain,
                                                   gain_XX_avoid, r))
             else:
                 skipped_too_far = skipped_too_far + 1
@@ -158,7 +165,7 @@ def get_best_gridpoints(gps_start,
                     outstring += "max_beam_distance_deg = %.2f [deg]"
                     logger.debug(outstring % (dist_obs, dist_avoid, max_beam_distance_deg))
 
-        logger.debug("Number of gridpoints skipped due to gain lower than minimum (=%.2f) = %d" % (min_gain,
+        logger.debug("Number of gridpoints skipped due to gain lower than minimum (=%.2f) = %d" % (current_min_gain,
                                                                                                    skipped_gain_too_low))
         outstring = "Number of gridpoints skipped due to being further than limit ( max_beam_distance_deg = %.2f [deg] ) = %d"
         logger.debug(outstring % (max_beam_distance_deg, skipped_too_far))
@@ -176,17 +183,17 @@ def get_best_gridpoints(gps_start,
     return tracklist
 
 
-def get_best_gridpoints_supress_sun(gps_start,
-                                    obs_source_ra_deg,
-                                    obs_source_dec_deg,
-                                    model="analytic",
-                                    min_gain=0.5,
-                                    max_beam_distance_deg=30,
-                                    channel=145,
-                                    verb_level=1,
-                                    duration=3600,
-                                    step=120,
-                                    min_elevation=50.00):
+def get_best_gridpoints_suppress_sun(gps_start,
+                                     obs_source_ra_deg,
+                                     obs_source_dec_deg,
+                                     model="analytic",
+                                     min_gain=None,
+                                     max_beam_distance_deg=30,
+                                     channel=145,
+                                     verb_level=1,
+                                     duration=3600,
+                                     step=120,
+                                     min_elevation=30.00):
     t = su.time2tai(gps_start)
     sunra, sundec, _ = su.S_MWAPOS.at(t).observe(su.PLANETS['Sun']).apparent().radec()
     return get_best_gridpoints(gps_start=gps_start,
@@ -202,6 +209,10 @@ def get_best_gridpoints_supress_sun(gps_start,
                                duration=duration,
                                step=step,
                                min_elevation=min_elevation)
+
+
+# Keep old name in case old code still uses it.
+get_best_gridpoints_supress_sun = get_best_gridpoints_suppress_sun
 
 
 def get_sun_elevation(gps_start=None):
