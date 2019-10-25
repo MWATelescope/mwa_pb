@@ -19,5 +19,5 @@ setup(
              'scripts/primarybeammap_tant_test.py',
              'scripts/track_and_suppress.py'],
     install_requires=["numpy", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "h5py"],
-    extras_require=["ephem", "Pillow"]   # Needed only to generate sky maps in mwa_pb/skymap.py
+    extras_require={'skymap':["ephem", "Pillow"]}   # Needed only to generate sky maps in mwa_pb/skymap.py
 )
