@@ -18,5 +18,5 @@ setup(
            'scripts/plot_skymap.py',
            'scripts/primarybeammap_tant_test.py',
            'scripts/track_and_suppress.py'],
-  install_requires=["numpy", "astropy", "matplotlib", "scipy>=0.15.1", "ephem", "h5py", "Pillow"]
+  install_requires=["numpy", "astropy", "skyfield", "matplotlib", "scipy>=0.15.1", "ephem", "h5py", "Pillow"]
 )

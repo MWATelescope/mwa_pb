@@ -14,10 +14,10 @@ import astropy
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
 
-import beam_full_EE
-import config
-import metadata
-import mwa_tile
+from . import beam_full_EE
+from . import config
+from . import metadata
+from . import mwa_tile
 
 logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger(__name__)  # default logger level is WARNING
@@ -95,7 +95,7 @@ def MWA_Tile_full_EE(za, az, freq,
     if zenithnorm:
         j = tile.apply_zenith_norm_Jones(j)  # Normalise
 
-    # TODO: do frequency interpolation here (with 2nd adjacent beam)
+    # TO DO: do frequency interpolation here (with 2nd adjacent beam)
 
     # Use swapaxis to place jones matrices in last 2 dimensions
     # insead of first 2 dims.
@@ -280,7 +280,7 @@ def MWA_Tile_analytic(za, az,
 
     # loop over dipoles
     array_factor = 0.0
-    for k in xrange(16):
+    for k in range(16):
         # relative dipole phase for a source at (theta,phi)
         phase = amps[k] * numpy.exp((1j) * 2 * math.pi / lam * (dipole_east[k] * projection_east
                                                                 + dipole_north[k] * projection_north
@@ -439,7 +439,7 @@ def get_beam_response(obsid,
                           unit=(astropy.units.deg, astropy.units.deg))
     obs_source.location = config.MWAPOS
 
-    for itime in xrange(Ntimes):
+    for itime in range(Ntimes):
         obs_source.obstime = Time(midtimes[itime], format='gps', scale='utc')
         obs_source_prec = obs_source.transform_to('altaz')
         Azs, Alts = obs_source_prec.az.deg, obs_source_prec.alt.deg
@@ -448,7 +448,7 @@ def get_beam_response(obsid,
         theta = numpy.radians(90 - Alts)
         phi = numpy.radians(Azs)
 
-        for ifreq in xrange(len(frequencies)):
+        for ifreq in range(len(frequencies)):
             rX, rY = MWA_Tile_analytic(theta, phi,
                                        freq=frequencies[ifreq], delays=observation['rfstreams']['0']['delays'],
                                        zenithnorm=True,

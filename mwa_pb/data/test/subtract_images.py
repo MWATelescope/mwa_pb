@@ -34,19 +34,19 @@ def mkdir_p(path):
       else: raise
                                             
 def usage():
-   print "calcfits.py FITS_FILE1 OPERATION[*,-,compare,a,/,+] FITS_FILE2 OUTPUT_FITS_FILE[default %s]" % out_fitsname
-   print "\n"
-   print "-d : increases verbose level"
-   print "-h : prints help and exists"
-   print "-g : produce gif of (channel-avg) for all integrations"
+   print(("calcfits.py FITS_FILE1 OPERATION[*,-,compare,a,/,+] FITS_FILE2 OUTPUT_FITS_FILE[default %s]" % out_fitsname))
+   print("\n")
+   print("-d : increases verbose level")
+   print("-h : prints help and exists")
+   print("-g : produce gif of (channel-avg) for all integrations")
 
 # functions :
 def parse_command_line():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hvdg", ["help", "verb", "debug", "gif"])
-    except getopt.GetoptError, err:
+    except getopt.GetoptError as err:
         # print help information and exit:
-        print str(err) # will print something like "option -a not recognized"
+        print((str(err))) # will print something like "option -a not recognized"
         usage()
         sys.exit(2)
 
@@ -79,31 +79,31 @@ if len(sys.argv) > 4:
    oper = sys.argv[4]
 
 
-print "####################################################"
-print "PARAMTERS :"
-print "####################################################"
-print "fitsname        = %s" % fitsname
-print "oper            = %s" % oper
-print "fitsname2       = %s" % fitsname2
-print "out_fitsname   = %s" % out_fitsname
-print "####################################################"
+print("####################################################")
+print("PARAMTERS :")
+print("####################################################")
+print(("fitsname        = %s" % fitsname))
+print(("oper            = %s" % oper))
+print(("fitsname2       = %s" % fitsname2))
+print(("out_fitsname   = %s" % out_fitsname))
+print("####################################################")
 
 fits = pyfits.open(fitsname)
 x_size=fits[0].header['NAXIS1']
 # channels=100
 y_size=fits[0].header['NAXIS2']
-print 'Read fits file %s' % fitsname
-print 'FITS size = %d x %d' % (x_size,y_size)
+print(('Read fits file %s' % fitsname))
+print(('FITS size = %d x %d' % (x_size,y_size)))
 
 fits2 = pyfits.open(fitsname2)
 x_size2=fits2[0].header['NAXIS1']
 # channels=100
 y_size2=fits2[0].header['NAXIS2']
-print 'Read fits file 2 %s' % fitsname2
-print 'FITS size 2 = %d x %d' % (x_size,y_size)
+print(('Read fits file 2 %s' % fitsname2))
+print(('FITS size 2 = %d x %d' % (x_size,y_size)))
 
 if x_size!=x_size2 or y_size!=y_size2 :
-   print "ERROR : cannot execute operation %s on files of different sizes (%d,%d) != (%d,%d)" % (oper,x_size,y_size,x_size2,y_size2)
+   print(("ERROR : cannot execute operation %s on files of different sizes (%d,%d) != (%d,%d)" % (oper,x_size,y_size,x_size2,y_size2)))
    exit;
 
 data1=None
@@ -142,7 +142,7 @@ for y in range(y_size) :
          data_out[y][x] = (data1[y][x] + data2[y][x])/2.00
       if oper == "compare" :
          if math.fabs(data1[y][x] - data2[y][x]) > 0.001 :
-            print "Files differ at (x,y) = (%d,%d) %.4f != %.4f" % (x,y,data1[y][x],data2[y][x])
+            print(("Files differ at (x,y) = (%d,%d) %.4f != %.4f" % (x,y,data1[y][x],data2[y][x])))
 
 
            
@@ -151,13 +151,13 @@ hdulist.writeto(out_fitsname,clobber=True)
 
 if oper == "compare" :
    if diff_count > 0  :
-      print "Number of differences = %d" % (diff_count)
+      print(("Number of differences = %d" % (diff_count)))
    else :
-      print "Files are the same : images are the same and headers might still differ"
+      print("Files are the same : images are the same and headers might still differ")
 else :        
    # fits.writeto( out_fitsname , clobber=True )      
    # print 'AFTER (%d,%d) = %.2f' % (x_size/2,y_size/2,data[y_size/2][x_size/2])
-   print "Resulting image saved to file %s" % out_fitsname
+   print(("Resulting image saved to file %s" % out_fitsname))
    
 
        

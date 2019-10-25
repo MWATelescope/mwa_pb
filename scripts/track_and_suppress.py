@@ -15,12 +15,13 @@ import logging
 from optparse import OptionParser
 import sys
 
-import astropy
-from astropy.coordinates import SkyCoord
+import skyfield.api as si
+
 from astropy.time import Time
 
 from mwa_pb import config
-from mwa_pb.suppress import get_best_gridpoints_supress_sun, get_best_gridpoints
+from mwa_pb.suppress import get_best_gridpoints_suppress_sun, get_best_gridpoints
+from mwa_pb import skyfield_utils as su
 
 # configure the logging
 logging.basicConfig(filename='/tmp/suppress.log', format='# %(levelname)s:%(name)s: %(message)s')
@@ -133,7 +134,7 @@ if __name__ == '__main__':
                       dest="verbose",
                       default=False,
                       help="Increase verbosity of output")
-                      
+
     parser.add_option('--min_elevation','--min_elev','--min_el','--min_alt',
                       dest='min_elevation',
                       default=30,
@@ -142,12 +143,14 @@ if __name__ == '__main__':
 
     (options, args) = parser.parse_args()
 
-    print "######################################################"
-    print "PARAMETERS:"
-    print "######################################################"
-    print "min_gain = %.4f" % (options.min_gain)
-    print "min_elevation = %.2f [deg]" % (options.min_elevation)
-    print "######################################################"
+    print("######################################################")
+    print("PARAMETERS:")
+    print("######################################################")
+    print("min_gain = %.4f" % (options.min_gain))
+    print("min_elevation = %.2f [deg]" % (options.min_elevation))
+    print("######################################################")
+
+    su.init_data()
 
     model = options.model
     if model not in ['analytic', 'advanced', 'full_EE', 'full_EE_AAVS05']:
@@ -172,17 +175,17 @@ if __name__ == '__main__':
     step = 8 * int((options.step + 7) / 8)  # Always round up to the next modulo 8 second, not down
 
     if (options.avoid_source_dec_deg is None) or (options.avoid_source_dec_deg is None):
-        tracklist = get_best_gridpoints_supress_sun(gps_start=start_time.gps + 16,  # Add 16 to allow for mode change
-                                                    obs_source_ra_deg=options.obs_source_ra_deg,
-                                                    obs_source_dec_deg=options.obs_source_dec_deg,
-                                                    model=options.model,
-                                                    min_gain=options.min_gain,
-                                                    max_beam_distance_deg=options.max_beam_distance_deg,
-                                                    channel=options.channel,
-                                                    verb_level=1,
-                                                    duration=options.duration,
-                                                    step=step,
-                                                    min_elevation=options.min_elevation)
+        tracklist = get_best_gridpoints_suppress_sun(gps_start=start_time.gps + 16,  # Add 16 to allow for mode change
+                                                     obs_source_ra_deg=options.obs_source_ra_deg,
+                                                     obs_source_dec_deg=options.obs_source_dec_deg,
+                                                     model=options.model,
+                                                     min_gain=options.min_gain,
+                                                     max_beam_distance_deg=options.max_beam_distance_deg,
+                                                     channel=options.channel,
+                                                     verb_level=1,
+                                                     duration=options.duration,
+                                                     step=step,
+                                                     min_elevation=options.min_elevation)
     else:
         tracklist = get_best_gridpoints(gps_start=start_time.gps + 16,  # Add 16 to allow for mode change
                                         obs_source_ra_deg=options.obs_source_ra_deg,
@@ -233,10 +236,14 @@ if __name__ == '__main__':
 
     for entry in tracklist:
         otime, step, az, alt = entry
-        obstime = Time(otime, format='gps', scale='utc')
-        pos = SkyCoord(az, alt, frame='altaz', unit=(astropy.units.deg, astropy.units.deg), location=config.MWAPOS,
-                       obstime=obstime)
-        posrd = pos.transform_to('icrs')
+
+        t = su.time2tai(otime)
+        observer = su.S_MWAPOS.at(t)
+        pos = observer.from_altaz(alt_degrees=alt,
+                                  az_degrees=az,
+                                  distance=si.Distance(au=9e90))
+        ra_a, dec_a, _ = pos.radec()
+
         if options.radec:
             command = "single_observation.py --creator=%(creator)s --starttime=%(otime)s --stoptime=++%(step)s --freq=%(channel)d,24 "
             command += "--obsname=%(obj)s_%(channel)d --inttime=%(inttime)s --freqres=%(freqres)d --useazel --usegrid= "
@@ -253,10 +260,10 @@ if __name__ == '__main__':
                                  'obj': options.obj,
                                  'inttime': inttime_str,
                                  'freqres': options.freqres,
-                                 'ra': posrd.ra.deg,
-                                 'dec': posrd.dec.deg,
+                                 'ra': ra_a._degrees,
+                                 'dec': dec_a.degrees,
                                  'alt': alt,
                                  'az': az,
                                  'project': options.project})
 
-    print "Script saved to file %s" % (outfile_name)
+    print("Script saved to file %s" % (outfile_name))

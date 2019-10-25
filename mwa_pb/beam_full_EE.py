@@ -37,14 +37,18 @@ import logging
 import os
 import math
 
-from scipy import misc
+# The following try/except allows older versions of scipy (<1.0.0) to work.
+try:
+    from scipy.special import factorial
+except ImportError:
+    from scipy.misc import factorial
 from scipy.special import lpmv  # associated Legendre function
 
 from astropy.io import fits
 from scipy.interpolate import RegularGridInterpolator
 
-import config
-import beam_tools
+from . import config
+from . import beam_tools
 
 logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger(__name__)  # default logger level is WARNING
@@ -99,7 +103,7 @@ class ApertureArray(object):
         # If the h5 file isn't there, raise an IOError
         if not os.path.exists(h5filepath):
             logger.error('Fatal error - h5 file not found at specified location: %s' % h5filepath)
-            raise IOError, 'h5 file not found at specified location: %s' % h5filepath
+            raise IOError('h5 file not found at specified location: %s' % h5filepath)
         # If we were passed the name of the default h5 file, and it exists, use the pre-loaded copy for speed
         elif h5filepath == config.h5file:
             self.h5f = H5FILE
@@ -111,7 +115,7 @@ class ApertureArray(object):
             self.h5f = h5py.File(h5filepath, 'r')
             self.h5_file_version = None    # Unknown, can't use the version in the config module.
             # Find available frequencies in h5 file
-            freqs = np.array([int(x[3:]) for x in self.h5f.keys() if 'X1_' in x])
+            freqs = np.array([int(x[3:]) for x in list(self.h5f.keys()) if 'X1_' in x])
             freqs.sort()
 
         # find the nearest freq lookup table
@@ -355,8 +359,8 @@ class Beam(object):
                 Q2[0:my_len_half] = Q_all[s2, 0] * np.exp(1.0j * Q_all[s2, 1] * deg2rad)
 
                 # accumulate Q1 and Q2, scaled by excitation voltage
-                Q1_accum = Q1_accum + Q1 * Vcplx[ant_i]
-                Q2_accum = Q2_accum + Q2 * Vcplx[ant_i]
+                Q1_accum += Q1 * Vcplx[ant_i]
+                Q2_accum += Q2 * Vcplx[ant_i]
             self.beam_modes[pols[pol]] = {'Q1': Q1_accum, 'Q2': Q2_accum,
                                           'M': M_accum, 'N': N_accum}
 
@@ -483,7 +487,7 @@ class Beam(object):
     def get_FF(self, phi_arr, theta_arr, grid):
         """
         Converts the beam object's spherical harmonics to a Jones matrix of
-        an E-field (polarized in \hat{theta} and \hat{phi}).
+        an E-field (polarized in hat{theta} and hat{phi}).
 
         Input:
         phi_arr - Array of azimuth angles (radians), north through east
@@ -534,7 +538,7 @@ class Beam(object):
             # form pre-multiplying constants in (1) of "Calculating...."
             # Rick 19-12-2016: this is fine for the amount of modes used for the MWA simulations
             # but the factorials explode for higher number of modes!
-            C_MN = (0.5 * (2 * N + 1) * misc.factorial(N - abs(M)) / misc.factorial(N + abs(M))) ** 0.5
+            C_MN = (0.5 * (2 * N + 1) * factorial(N - abs(M)) / factorial(N + abs(M))) ** 0.5
             # Rick 19-12-2016: remove annoying "RuntimeWarning: invalid value encountered in divide, MabsM=-M/np.abs(M) ", caused by:
             # MabsM=-M/np.abs(M)  <----
             # MabsM[MabsM==np.NaN]=1 #for M=0, replace NaN with MabsM=1;
@@ -560,7 +564,7 @@ class Beam(object):
             # calculate phi-dependent component ( phi_comp ), but only for each unique M  (!!)
             # make sure data is stored as a contiguous array	to reduce cache misses
             # (should be the case automatically, but just to be sure)
-            phi_comp = np.ascontiguousarray(np.exp(1.0j * np.outer(phi_unique, range(-nmax, nmax + 1))))
+            phi_comp = np.ascontiguousarray(np.exp(1.0j * np.outer(phi_unique, list(range(-nmax, nmax + 1)))))
             # determine theta-dependent components
             # nomenclature:
             # T and P are the sky polarisations theta and phi

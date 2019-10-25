@@ -1,9 +1,15 @@
 """Library to access the MWA metadata web services
 """
 
-import urllib
-import urllib2
 import json
+
+try:   # Python3
+    from urllib.parse import urlencode
+    from urllib.request import urlopen
+    from urllib.error import HTTPError, URLError
+except ImportError:   # Python2
+    from urllib import urlencode
+    from urllib2 import urlopen, HTTPError, URLError
 
 # Append the service name to this base URL, eg 'con', 'obs', etc.
 BASEURL = 'http://ws.mwatelescope.org/'
@@ -16,17 +22,17 @@ def getmeta(servicetype='metadata', service='obs', params=None):
        and a set of parameters as a Python dictionary, return a Python dictionary containing the result.
     """
     if params:
-        data = urllib.urlencode(params)  # Turn the dictionary into a string with encoded 'name=value' pairs
+        data = urlencode(params)  # Turn the dictionary into a string with encoded 'name=value' pairs
     else:
         data = ''
     # Get the data
     try:
-        result = json.load(urllib2.urlopen(BASEURL + servicetype + '/' + service + '?' + data))
-    except urllib2.HTTPError as error:
-        print "HTTP error from server: code=%d, response:\n %s" % (error.code, error.read())
+        result = json.load(urlopen(BASEURL + servicetype + '/' + service + '?' + data))
+    except HTTPError as error:
+        print(("HTTP error from server: code=%d, response:\n %s" % (error.code, error.read())))
         return
-    except urllib2.URLError as error:
-        print "URL or network error: %s" % error.reason
+    except URLError as error:
+        print(("URL or network error: %s" % error.reason))
         return
     # Return the result dictionary
     return result

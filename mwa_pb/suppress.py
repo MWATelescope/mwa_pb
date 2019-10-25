@@ -15,13 +15,12 @@ import logging
 
 import numpy
 
-import astropy
-from astropy.coordinates import SkyCoord, get_sun
-from astropy.time import Time
+import skyfield.api as si
 
-import config
-import primarybeammap_tant
-import mwa_sweet_spots
+from . import primarybeammap_tant
+from . import mwa_sweet_spots
+from . import skyfield_utils as su
+
 
 # configure the logging
 logging.basicConfig()
@@ -35,76 +34,72 @@ def get_best_gridpoints(gps_start,
                         avoid_source_ra_deg,
                         avoid_source_dec_deg,
                         model="analytic",
-                        min_gain=0.1,
+                        min_gain=None,
                         max_beam_distance_deg=360,
                         channel=145,
                         verb_level=1,
                         duration=3600,
                         step=120,
-                        min_elevation=50.00):
+                        min_elevation=30.00):
+    su.init_data()
     frequency = channel * 1.28
-
-    stime = Time(gps_start, format='gps', scale='utc')
 
     if model not in ['analytic', 'advanced', 'full_EE', 'full_EE_AAVS05']:
         logger.error("Model %s not found\n" % model)
 
-    gp_numbers = mwa_sweet_spots.all_grid_points.keys()
+    gp_numbers = list(mwa_sweet_spots.all_grid_points.keys())
     gp_numbers.sort()
     gp_azes = numpy.array([mwa_sweet_spots.all_grid_points[i][1] for i in gp_numbers])
     gp_alts = numpy.array([mwa_sweet_spots.all_grid_points[i][2] for i in gp_numbers])
     gp_delays = [mwa_sweet_spots.all_grid_points[i][4] for i in gp_numbers]
 
-#    gp_positions = astropy.coordinates.AltAz(az=astropy.coordinates.Angle(gp_azes, unit=astropy.units.deg),
-#                                             alt=astropy.coordinates.Angle(gp_alts, unit=astropy.units.deg),
-#                                             location=config.MWAPOS)
-    obs_source = SkyCoord(ra=obs_source_ra_deg,
-                          dec=obs_source_dec_deg,
-                          equinox='J2000',
-                          unit=(astropy.units.deg, astropy.units.deg))
-    obs_source.location = config.MWAPOS
+    obs_source = si.Star(ra=si.Angle(degrees=obs_source_ra_deg),
+                         dec=si.Angle(degrees=obs_source_dec_deg))
 
-    avoid_source = SkyCoord(ra=avoid_source_ra_deg,
-                            dec=avoid_source_dec_deg,
-                            equinox='J2000',
-                            unit=(astropy.units.deg, astropy.units.deg))
-    avoid_source.location = config.MWAPOS
+    avoid_source = si.Star(ra=si.Angle(degrees=avoid_source_ra_deg),
+                           dec=si.Angle(degrees=avoid_source_dec_deg))
 
     freq = frequency * 1e6
     tracklist = []  # List of (starttime, duration, az, el) tuples
-    for starttime in range(int(stime.gps), int(stime.gps + duration), int(step)):
-        t = Time(starttime, format='gps', scale='utc')
-        obs_source.obstime = t
-        obs_source_altaz = obs_source.transform_to('altaz')
+    for starttime in range(int(gps_start), int(gps_start + duration), int(step)):
+        t = su.time2tai(starttime)
+        observer = su.S_MWAPOS.at(t)
+        obs_source_apparent = observer.observe(obs_source).apparent()
+        obs_source_alt, obs_source_az, _ = obs_source_apparent.altaz()
 
-        if obs_source_altaz.alt.deg < min_elevation:
-            logger.debug("Source at %.2f [deg] below minimum required elevation = %.2f [deg]  at this time, skip this timestep." % (obs_source_altaz.alt.deg,min_elevation))
+        if obs_source_alt.degrees < min_elevation:
+            logger.debug("Source at %.2f [deg] below minimum elevation = %.2f [deg]  at this time, skip this timestep." % (obs_source_alt.degrees,
+                                                                                                                           min_elevation))
             continue  # Source below pointing horizon at this time, skip this timestep.
 
-        avoid_source.obstime = t
-        avoid_source_altaz = avoid_source.transform_to('altaz')  # Use as, for example: avoid_source_altaz.az.deg
+        if min_gain is None:
+            current_min_gain = 0.5
+            if obs_source_alt < 50:
+                current_min_gain = 0.1
+        else:
+            current_min_gain = min_gain
 
-        if avoid_source_altaz.alt.deg < 0.0:
-            tracklist.append((starttime, step, obs_source_altaz.az.deg, obs_source_altaz.alt.deg))
+        avoid_source_apparent = observer.observe(avoid_source).apparent()
+        avoid_source_alt, avoid_source_az, _ = avoid_source_apparent.altaz()
+
+        if avoid_source_alt.degrees < 0.0:
+            tracklist.append((starttime, step, obs_source_az.degrees, obs_source_alt.degrees))
             logger.debug("Avoided source below TRUE horizon, just use actual target az/alt for this timestep.")
             continue  # Avoided source below TRUE horizon, just use actual target az/alt for this timestep.
 
-        dist_deg = obs_source.separation(avoid_source).deg
+        dist_deg = obs_source_apparent.separation_from(avoid_source_apparent).degrees
 
-        logger.debug("Observed source at (az,alt) = (%.4f,%.4f) [deg]" % (obs_source_altaz.az.deg, obs_source_altaz.alt.deg))
-        logger.debug("Avoided  source at (az,alt) = (%.4f,%.4f) [deg]" % (avoid_source_altaz.az.deg, avoid_source_altaz.alt.deg))
+        logger.debug("Observed source at (az,alt) = (%.4f,%.4f) [deg]" % (obs_source_az.degrees, obs_source_alt.degrees))
+        logger.debug("Avoided  source at (az,alt) = (%.4f,%.4f) [deg]" % (avoid_source_az.degrees, avoid_source_alt.degrees))
         logger.debug("Anglular distance = %.2f [deg]" % (dist_deg))
-        logger.debug("Gps time = %d" % t.gps)
+        logger.debug("Gps time = %d" % su.tai2gps(t))
 
-        gp_positions = astropy.coordinates.SkyCoord(alt=gp_alts,
-                                                    az=gp_azes,
-                                                    unit=astropy.units.deg,
-                                                    location=config.MWAPOS,
-                                                    frame=astropy.coordinates.AltAz,
-                                                    obstime=t)
+        gp_positions = observer.from_altaz(alt_degrees=gp_alts,
+                                           az_degrees=gp_azes,
+                                           distance=si.Distance(au=9e90))
 
-        dist_obs_degs = obs_source_altaz.separation(gp_positions).deg
-        dist_avoid_degs = avoid_source_altaz.separation(gp_positions).deg
+        dist_obs_degs = obs_source_apparent.separation_from(gp_positions).degrees
+        dist_avoid_degs = avoid_source_apparent.separation_from(gp_positions).degrees
 
         # select gridpoints within given angular distance :
         best_gridpoint = None
@@ -127,21 +122,21 @@ def get_best_gridpoints(gps_start,
                 beam_obs = primarybeammap_tant.get_beam_power(gp_delays[i],
                                                               freq,
                                                               model=model,
-                                                              pointing_az_deg=obs_source_altaz.az.deg,
-                                                              pointing_za_deg=90 - obs_source_altaz.alt.deg,
+                                                              pointing_az_deg=obs_source_az.degrees,
+                                                              pointing_za_deg=90 - obs_source_alt.degrees,
                                                               zenithnorm=True)
                 beam_avoid = primarybeammap_tant.get_beam_power(gp_delays[i],
                                                                 freq,
                                                                 model=model,
-                                                                pointing_az_deg=avoid_source_altaz.az.deg,
-                                                                pointing_za_deg=90 - avoid_source_altaz.alt.deg,
+                                                                pointing_az_deg=avoid_source_az.degrees,
+                                                                pointing_za_deg=90 - avoid_source_alt.degrees,
                                                                 zenithnorm=True)
 
                 gain_XX_obs = beam_obs['XX']
                 gain_XX_avoid = beam_avoid['XX']
                 r = gain_XX_obs / gain_XX_avoid
 
-                if r > 1.00 and gain_XX_obs > min_gain:
+                if r > 1.00 and gain_XX_obs > current_min_gain:
                     outstring = "\t\tSelected gridpoint = %d at (az,elev) = (%.4f,%.4f) [deg] at (distances %.4f and %.4f deg) "
                     outstring += "-> gain_obs=%.4f and gain_avoid=%.4f -> gain_obs/gain_avoid = %.4f"
                     logger.debug(outstring % (gpnum, gp_azes[i], gp_alts[i], dist_obs, dist_avoid, gain_XX_obs, gain_XX_avoid, r))
@@ -161,7 +156,7 @@ def get_best_gridpoints(gps_start,
                                                   dist_obs,
                                                   dist_avoid,
                                                   gain_XX_obs,
-                                                  min_gain,
+                                                  current_min_gain,
                                                   gain_XX_avoid, r))
             else:
                 skipped_too_far = skipped_too_far + 1
@@ -170,7 +165,7 @@ def get_best_gridpoints(gps_start,
                     outstring += "max_beam_distance_deg = %.2f [deg]"
                     logger.debug(outstring % (dist_obs, dist_avoid, max_beam_distance_deg))
 
-        logger.debug("Number of gridpoints skipped due to gain lower than minimum (=%.2f) = %d" % (min_gain,
+        logger.debug("Number of gridpoints skipped due to gain lower than minimum (=%.2f) = %d" % (current_min_gain,
                                                                                                    skipped_gain_too_low))
         outstring = "Number of gridpoints skipped due to being further than limit ( max_beam_distance_deg = %.2f [deg] ) = %d"
         logger.debug(outstring % (max_beam_distance_deg, skipped_too_far))
@@ -180,7 +175,7 @@ def get_best_gridpoints(gps_start,
             logger.debug(outstring % (gp_numbers[best_gridpoint],
                                       gp_azes[best_gridpoint],
                                       gp_alts[best_gridpoint],
-                                      t.iso, r_max,
+                                      t.utc_iso(), r_max,
                                       best_gain_obs,
                                       best_gain_avoid))
             tracklist.append((starttime, step, gp_azes[best_gridpoint], gp_alts[best_gridpoint]))
@@ -188,24 +183,24 @@ def get_best_gridpoints(gps_start,
     return tracklist
 
 
-def get_best_gridpoints_supress_sun(gps_start,
-                                    obs_source_ra_deg,
-                                    obs_source_dec_deg,
-                                    model="analytic",
-                                    min_gain=0.5,
-                                    max_beam_distance_deg=30,
-                                    channel=145,
-                                    verb_level=1,
-                                    duration=3600,
-                                    step=120,
-                                    min_elevation=50.00):
-    t = Time(gps_start, format='gps', scale='utc')
-    sunpos = get_sun(t)
+def get_best_gridpoints_suppress_sun(gps_start,
+                                     obs_source_ra_deg,
+                                     obs_source_dec_deg,
+                                     model="analytic",
+                                     min_gain=None,
+                                     max_beam_distance_deg=30,
+                                     channel=145,
+                                     verb_level=1,
+                                     duration=3600,
+                                     step=120,
+                                     min_elevation=30.00):
+    t = su.time2tai(gps_start)
+    sunra, sundec, _ = su.S_MWAPOS.at(t).observe(su.PLANETS['Sun']).apparent().radec()
     return get_best_gridpoints(gps_start=gps_start,
                                obs_source_ra_deg=obs_source_ra_deg,
                                obs_source_dec_deg=obs_source_dec_deg,
-                               avoid_source_ra_deg=sunpos.ra.deg,
-                               avoid_source_dec_deg=sunpos.dec.deg,
+                               avoid_source_ra_deg=sunra.hours * 15.0,
+                               avoid_source_dec_deg=sundec.degrees,
                                model=model,
                                min_gain=min_gain,
                                max_beam_distance_deg=max_beam_distance_deg,
@@ -216,13 +211,12 @@ def get_best_gridpoints_supress_sun(gps_start,
                                min_elevation=min_elevation)
 
 
-def get_sun_elevation(gps_start=None):
-    if gps_start is None:
-        t = Time.now()
-    else:
-        t = Time(gps_start, format='gps', scale='utc')
-    sunpos = astropy.coordinates.get_sun(t)
-    sunpos.location = config.MWAPOS
-    sunprec = sunpos.transform_to('altaz')
+# Keep old name in case old code still uses it.
+get_best_gridpoints_supress_sun = get_best_gridpoints_suppress_sun
 
-    return sunprec.alt.deg
+
+def get_sun_elevation(gps_start=None):
+    t = su.time2tai(gps_start)
+    sunalt, sunaz, _ = su.S_MWAPOS.at(t).observe(su.PLANETS['Sun']).apparent().altaz()
+
+    return sunalt.degrees

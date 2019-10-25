@@ -4,7 +4,7 @@ import numpy
 
 from scipy import interpolate
 
-import config
+from . import config
 
 
 ##################################
@@ -49,7 +49,7 @@ def get_delay_length(delayset, freq, delayfile=None):
     t = []
     f = open(delayfile)
     for line in f:
-        t.append(map(float, line.split()))
+        t.append(list(map(float, line.split())))
     darr = numpy.array(t)
 
     f_freqs = darr[:, 0]  # Array of frequencies in the delay file.
@@ -90,7 +90,7 @@ def get_delay_gains(delayset, freq, delayfile=None):
     t = []
     f = open(gainfile)
     for line in f:
-        t.append(map(float, line.split()))
+        t.append(list(map(float, line.split())))
     garr = numpy.array(t)
 
     f_freqs = garr[:, 0]  # Array of frequencies in the delay file.

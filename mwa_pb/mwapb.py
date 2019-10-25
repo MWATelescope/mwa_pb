@@ -3,7 +3,7 @@ import math
 
 import numpy
 
-import measured_beamformer
+from . import measured_beamformer
 
 logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger(__name__)  # default logger level is WARNING

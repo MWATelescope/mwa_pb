@@ -40,7 +40,7 @@ def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0.0, gps=0):
 
     try:
         f = pyfits.open(filename)
-    except IOError, err:
+    except IOError as err:
         logger.error('Unable to open %s for reading\n%s', filename, err)
         return None
     if isinstance(ext, int):
@@ -48,7 +48,7 @@ def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0.0, gps=0):
             logger.error('FITS file %s does not have extension %d' % (filename, ext))
             return None
     elif isinstance(ext, str):
-        for extnum in xrange(len(f)):
+        for extnum in range(len(f)):
             if ext.upper() == f[extnum].name:
                 logger.info('Found matching extension %s[%d] = %s' % (filename, extnum, ext))
                 ext = extnum
@@ -103,7 +103,7 @@ def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0.0, gps=0):
 
     if naxes >= 4:
         Tostack = [Xflat, Yflat, FF]
-        for i in xrange(3, naxes):
+        for i in range(3, naxes):
             Tostack.append(np.ones(Xflat.shape))
     else:
         Tostack = [Xflat, Yflat]
@@ -114,7 +114,7 @@ def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0.0, gps=0):
         # The second argument is "origin" -- in this case we're declaring we
         # have 1-based (Fortran-like) coordinates.
         sky = wcs.wcs_pix2world(pixcrd, 1)
-    except Exception, e:
+    except Exception as e:
         logger.error('Problem converting to WCS: %s' % e)
         return None
 
@@ -135,7 +135,7 @@ def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0.0, gps=0):
     else:
         frequencies = np.array([freq])
 
-    print "Frequency[0] = %.2f" % (frequencies[0])
+    print("Frequency[0] = %.2f" % (frequencies[0]))
 
     # and make them back into arrays
     RA = ra.reshape(X.shape)
@@ -148,9 +148,9 @@ def get_azza_from_fits(filename, ext=0, precess=True, freq_mhz=0.0, gps=0):
         logger.error('Unable to read observation date DATE-OBS from %s' % filename)
 
         if gps > 0:
-            time = Time(gps, format='gps', scale='utc')
-            d = time.fits
-            print "gps=%d -> d=%s" % (gps, d)
+            tref = Time(gps, format='gps', scale='utc')
+            d = tref.fits
+            print("gps=%d -> d=%s" % (gps, d))
         else:
             logger.error('GPS time not provided either -> cannot continue')
             return None
@@ -294,7 +294,7 @@ def Dij_beam_correct(j, Dij, centre=None):
 
                 out[:, :, i, j] = np.dot(my_j, np.dot(Dij[:, :, i, j], my_jH))
     else:
-        print 'FIXME for other lengths!!'
+        print('FIXME for other lengths!!')
         return
     return out
 
@@ -355,7 +355,7 @@ def estimateSkyBrightnessMatrix(j1, j2, Vij):
                 # J1^-1 (Vij (J2^H)^-1)
                 b[:, :, i, j] = np.dot(j1inv[:, :, i, j], np.dot(Vij[:, :, i, j], j2Hinv[:, :, i, j]))
     else:
-        print 'FIXME for other lengths!!'
+        print('FIXME for other lengths!!')
         return
     return b
 
@@ -380,7 +380,7 @@ def estimateSkyBrightnessMatrix_SLOW(j1, j2, Vij):
                 b[:, :, i, j] = b_2D
     # JUST TEST : b[:,:,i,j]=b_2D*0
     else:
-        print 'FIXME for other lengths!!'
+        print('FIXME for other lengths!!')
         return
 
     return b
@@ -404,7 +404,7 @@ def estimateSkyBrightnessMatrix_SLOW(j1, j2, Vij):
 #                b[:,:,i,j]=np.dot(j1inv, np.dot(Vij[:,:,i,j], j2Hinv))
 #                
 #    else:
-#        print 'FIX ME for other lengths!!'
+#        print 'FIXME for other lengths!!'
 #        return    
 #    return b
 
@@ -542,22 +542,22 @@ if __name__ == "__main__":
     if options.metafits is not None and ( options.delays is None or options.freq_mhz is None or options.freq_mhz == 0 ):
         try:
             f = pyfits.open(options.metafits)
-        except Exception, e:
+        except Exception as e:
             logger.error('Unable to open FITS file %s: %s' % (options.metafits, e))
             sys.exit(1)
 
         if options.delays is None:
-            if 'DELAYS' not in f[0].header.keys():
+            if 'DELAYS' not in list(f[0].header.keys()):
                 logger.error('Cannot find DELAYS in %s' % options.metafits)
                 sys.exit(1)
             options.delays = f[0].header['DELAYS']
-            print "DEBUG : options.delays = %s" % (options.delays)
+            print("DEBUG : options.delays = %s" % (options.delays))
             try:
                 delays = [int(x) for x in options.delays.split(',')]
-            except Exception, e:
+            except Exception as e:
                 logger.error('Unable to parse beamformer delays %s: %s' % (options.delays, e))
                 sys.exit(1)
-        
+
         if options.freq_mhz is None or options.freq_mhz == 0:
             centfreq = f[0].header['CENTCHAN']
             options.freq_mhz = int( centfreq ) * 1.28   # convert coarse channel to MHz
@@ -568,10 +568,10 @@ if __name__ == "__main__":
 
     # parse whatever is in options.delays :
     if options.delays is not None and delays is None:
-        print "Parsing options.delays = |%s|" % (options.delays)
+        print("Parsing options.delays = |%s|" % (options.delays))
         try:
             if (',' in options.delays):
-                delays = map(int, options.delays.split(','))
+                delays = list(map(int, options.delays.split(',')))
             else:
                 delays = 16 * [int(options.delays)]
         except Exception:
@@ -584,7 +584,7 @@ if __name__ == "__main__":
 
     # find delays by gridpoint if given as parameter:
     if gridpoint >= 0:
-        print "Getting delays for gridpoint = %d" % (gridpoint)
+        print("Getting delays for gridpoint = %d" % (gridpoint))
         delays = mwa_sweet_spots.get_delays(gridpoint)
 
     if options.model not in ['analytic', 'advanced', 'full_EE', 'full_EE_AAVS05', 'FEE', 'Full_EE', '2016', '2015', '2014']:
@@ -654,7 +654,7 @@ if __name__ == "__main__":
         xy.close()
     else:
         data_xy = data_xx * 0.00
-        print "WARNING : --xy_file not provided -> using ZERO XY image"
+        print("WARNING : --xy_file not provided -> using ZERO XY image")
 
     if xyi is not None:
         if naxes >= 4:
@@ -664,7 +664,7 @@ if __name__ == "__main__":
         xyi.close()
     else:
         data_xyi = data_xx * 0.00
-        print "WARNING : --xyi_file not provided -> using ZERO XYi image"
+        print("WARNING : --xyi_file not provided -> using ZERO XYi image")
 
     Joneses = {}
     stokeses = {}
@@ -690,7 +690,7 @@ if __name__ == "__main__":
         Vij = np.array([[data_yy, data_xy + 1j * data_xyi], [data_xy - 1j * data_xyi, data_xx]])
     # delays = beam_tools.gridpoint2delays(gridpoint, os.path.join(MWAtools_pb_dir, 'MWA_sweet_spot_gridpoints.csv'))
 
-    print "delays = %s , frequency = %.2f Hz" % (delays, target_freq_Hz)
+    print("delays = %s , frequency = %.2f Hz" % (delays, target_freq_Hz))
 
     sign_uv = 1
     sign_q = 1
@@ -762,6 +762,6 @@ if __name__ == "__main__":
         # changed abs -> real
         f_single[0].data = np.real(stokes[s])
 
-        print 'Writing %s' % out_filename_single
+        print('Writing %s' % out_filename_single)
         f_single.writeto(out_filename_single, clobber=True)
         f_single.close()
