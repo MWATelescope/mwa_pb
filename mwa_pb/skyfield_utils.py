@@ -73,8 +73,8 @@ def init_data():
             datadir = '/tmp'
         skyfield_loader = si.Loader(datadir, verbose=False, expire=True)
         PLANETS = skyfield_loader('de421.bsp')
-        TIMESCALE = skyfield_loader.timescale()
-        S_MWAPOS = PLANETS['earth'] + MWA_TOPO
+        TIMESCALE = skyfield_loader.timescale(builtin=True)   # TODO - set back to True when new version released
+        S_MWAPOS = PLANETS['earth'] + MWA_TOPO                #        with replacement for USNO server.
 
 
 def time2tai(input_time=None):
