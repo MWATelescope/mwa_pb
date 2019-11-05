@@ -37,6 +37,8 @@ if __name__ == "__main__":
     parser.add_option('--hidenulls', dest='hidenulls', default=False,
                       action='store_true',
                       help='Do not include black contours for nulls on plot.')
+    parser.add_option('--inverse', dest='inverse', default=False, action='store_true',
+                      help='Display background Haslam map in white->black instead of black->white')
     parser.add_option('--hidegleamsources', dest='gleamsources', default=True,
                       action='store_false',
                       help='Do not show dots for GLEAM sources on the plot.')
@@ -68,6 +70,7 @@ if __name__ == "__main__":
             result = skymap.plot_MWAconstellations(obsinfo=obsinfo,
                                                    outfile=options.out,
                                                    notext=options.notext,
+                                                   inverse=options.inverse,
                                                    observing=observing,
                                                    skydata=skydata,
                                                    showbeam=True,
@@ -89,6 +92,7 @@ if __name__ == "__main__":
         result = skymap.plot_MWAconstellations(obsinfo=obsinfo,
                                                outfile=options.out,
                                                notext=options.notext,
+                                               inverse=options.inverse,
                                                viewgps=options.viewtime,
                                                observing=True,
                                                skydata=skydata,

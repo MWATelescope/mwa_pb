@@ -53,6 +53,7 @@ DPI = 150
 LOW = 100
 HIGH = 10000
 CM = plt.cm.gray
+CMI = CM.reversed()
 
 
 def calc_delays(az=0.0, el=0.0):
@@ -286,6 +287,7 @@ def plot_MWAconstellations(outfile=None,
                            constellations=True,
                            gleamsources=False,
                            notext=False,
+                           inverse=False,
                            skydata=None,
                            background=None,
                            hidenulls=False,
@@ -351,7 +353,11 @@ def plot_MWAconstellations(outfile=None,
                                          skydata.skymapdec,
                                          nx, ny,
                                          masked=True)
-    bmap.imshow(numpy.ma.log10(tform_skymap[:, ::-1]), cmap=CM, vmin=math.log10(LOW), vmax=math.log10(HIGH))
+    if inverse:
+        cmap = CMI
+    else:
+        cmap = CM
+    bmap.imshow(numpy.ma.log10(tform_skymap[:, ::-1]), cmap=cmap, vmin=math.log10(LOW), vmax=math.log10(HIGH))
 
     delays = []
     if showbeam:
@@ -468,6 +474,13 @@ def plot_MWAconstellations(outfile=None,
     for b in skydata.bodies.keys():
         name = skydata.bodies[b][2]
         color = skydata.bodies[b][1]
+        if inverse:
+            if name == 'Moon':
+                color = 'darkgoldenrod'
+            elif name == 'Jupiter':
+                color = 'sienna'
+            elif name == 'Saturn':
+                color = 'purple'
         size = skydata.bodies[b][0]
         body_app = observer.observe(b).apparent()
         body_ra_a, body_dec_a, _ = body_app.radec()
@@ -509,6 +522,11 @@ def plot_MWAconstellations(outfile=None,
             color = primarybeammap.sources[source][3]
         if color == 'k':
             color = 'w'
+
+        if inverse:
+            if color == 'w':
+                color = 'black'
+
         xx, yy = bmap(x * 15 - 360, d)
         try:
             if xx < 1e30 and yy < 1e30:
