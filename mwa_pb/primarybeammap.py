@@ -24,8 +24,7 @@ from matplotlib import pyplot as pylab
 
 import skyfield.api as si
 
-import skyfield_utils as su
-
+from . import skyfield_utils as su
 from . import config
 from . import primary_beam
 
