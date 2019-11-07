@@ -52,13 +52,21 @@ if __name__ == "__main__":
     parser.add_option('--daemon', '-d', dest='daemon', default=False,
                       action='store_true',
                       help='Run as a daemon, generating a new sky map every few minutes')
-    parser.add_option('-b', '--background', dest='background', default='black',
+    parser.add_option('-b', '--background', dest='background', default=None,
                       help='Background colour, eg red, green, transparent [default=%default]')
     (options, args) = parser.parse_args()
 
     skydata = skymap.SkyData()
     if skydata is None:
         sys.exit(1)
+
+    if not options.background:
+        if options.inverse:
+            background = 'white'
+        else:
+            background = 'black'
+    else:
+        background = options.background
 
     if options.daemon:
         while True:
@@ -76,7 +84,7 @@ if __name__ == "__main__":
                                                    showbeam=True,
                                                    constellations=options.constellations,
                                                    gleamsources=options.gleamsources,
-                                                   background=options.background,
+                                                   background=background,
                                                    hidenulls=options.hidenulls,
                                                    channel=options.channel,
                                                    xmas=False,
@@ -99,7 +107,7 @@ if __name__ == "__main__":
                                                showbeam=True,
                                                constellations=options.constellations,
                                                gleamsources=options.gleamsources,
-                                               background=options.background,
+                                               background=background,
                                                hidenulls=options.hidenulls,
                                                channel=options.channel,
                                                xmas=False,
