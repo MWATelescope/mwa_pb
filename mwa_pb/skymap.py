@@ -325,7 +325,7 @@ def plot_MWAconstellations(outfile=None,
         a_viewtime = Time(viewgps, format='gps', scale='utc')
 
     a_viewtime.delta_ut1_utc = 0  # We don't care about IERS tables and high precision answers
-    LST_hours = a_viewtime.sidereal_time(kind='apparent', longitude=config.MWAPOS.longitude)
+    LST_hours = a_viewtime.sidereal_time(kind='apparent', longitude=config.MWAPOS.lon)
 
     observer = su.S_MWAPOS.at(s_viewtime)
 
