@@ -25,6 +25,8 @@ import sys
 from astropy.io import fits as pyfits
 
 import numpy as np
+from scipy.interpolate import interp1d # for interpolation of receiver temperature
+
 
 from mwa_pb.primarybeammap_tant import contourlevels, get_beam_power, logger, make_primarybeammap
 from mwa_pb import mwa_sweet_spots
@@ -68,6 +70,26 @@ def trcv_from_skymodel_with_err(freq_mhz):
 
     return trcv
 
+# based on Daniel's paper 2020 : Noise Temperature of Phased Array Radio Telescope: The Murchison Widefield Array and the Engineering Development Array, Ung et al, 2020, IEEE 
+# less /home/msok/Desktop/MWA/papers/2020/Daniel/trcv_vs_freq.txt.txt 
+def trcv_daniel_paper_2020( freq_mhz ) :
+   x = [ 50.1336,52.4987,54.5253,58.5773,60.6017,63.2964,65.3203,68.3472,72.3884,73.7374,77.7740,82.1462,85.8443,89.2056,92.5666,96.5994,100.969,108.701,114.417,120.802,127.187,133.237,140.296,148.868,153.068,158.949,165.839,170.711,175.079,178.271,184.821,189.524,192.883,197.082,204.806,210.515,217.567,221.091,224.953,228.143,232.341,235.027,238.218,241.913,243.928,247.957,249.805,251.653,254.509,255.181,258.371,264.081,270.128,274.495,282.221,286.421,291.964,296.332,301.036,304.061,308.597,311.790,314.646,320.526,326.740 ]
+   y = [ 2363.92,1600.02,1168.37,643.601,501.566,408.215,321.595,291.723,220.082,189.092,162.481,141.139,130.839,123.949,118.702,113.679,105.386,90.5671,80.3998,74.5398,70.6221,65.4739,58.1265,49.6844,48.3628,45.5723,41.7958,40.6851,40.0350,38.9687,40.7059,41.3804,40.9391,41.8431,45.1556,48.7268,52.2987,57.6677,60.8893,62.2315,65.7089,69.0016,69.0096,69.0188,70.9207,75.6996,76.5301,75.7098,74.4959,73.6942,76.9700,80.3988,80.4164,80.4291,81.7709,79.5959,80.0447,79.6244,77.9293,75.0352,71.8618,69.9478,68.8263,67.3640,68.1138 ]
+   l = len(x)
+   
+   
+   if freq_mhz < 50 :
+      return y[0]
+      
+   if freq_mhz > 326 :
+      return y[l-1]
+      
+   tlna_cubic = interp1d(x, y, kind='cubic')
+   trcv = tlna_cubic(freq_mhz)
+   
+   return trcv    
+   
+
 
 def calculate_sensitivity(freq, delays, gps, trcv_type, T_rcv, size, dirname, model, plottype, extension,
                           pointing_az_deg=0,
@@ -81,10 +103,12 @@ def calculate_sensitivity(freq, delays, gps, trcv_type, T_rcv, size, dirname, mo
     print('frequency=%.2f -> delays=%s' % (freq, delays))
 
     # if trcv_type',default='trcv_from_skymodel_with_err
-    if trcv_type != "value":
-        if trcv_type == "trcv_from_skymodel_with_err":
-            T_rcv = trcv_from_skymodel_with_err(freq_mhz)
-            print("T_rcv calculated from trcv_from_skymodel_with_err = %.2f K" % (T_rcv))
+#    if trcv_type != "value":
+#        if trcv_type == "trcv_from_skymodel_with_err":
+#            T_rcv = trcv_from_skymodel_with_err(freq_mhz)
+#            print("T_rcv calculated from trcv_from_skymodel_with_err = %.2f K" % (T_rcv))
+    T_rcv = trcv_daniel_paper_2020( freq_mhz )
+    print "T_rcv calculated from trcv_daniel_paper_2020( %.2f MHz ) = %.2f K" % (freq_mhz,T_rcv)
 
     result = make_primarybeammap(gps, delays, freq,
                                  model=model,
