@@ -25,7 +25,7 @@ from . import skyfield_utils as su
 # configure the logging
 logging.basicConfig()
 logger = logging.getLogger('pb.suppress')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def get_best_gridpoints(gps_start,
@@ -172,7 +172,7 @@ def get_best_gridpoints(gps_start,
 
         if best_gridpoint is not None:
             outstring = "Best gridpoint %d at (az,alt)=(%.4f,%.4f) [deg] at %s UTC to observe has ratio = %.2f = %.8f / %.8f\n"
-            logger.debug(outstring % (gp_numbers[best_gridpoint],
+            logger.info(outstring % (gp_numbers[best_gridpoint],
                                       gp_azes[best_gridpoint],
                                       gp_alts[best_gridpoint],
                                       t.utc_iso(), r_max,
