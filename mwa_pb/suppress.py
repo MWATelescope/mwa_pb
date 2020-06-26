@@ -74,7 +74,7 @@ def get_best_gridpoints(gps_start,
 
         if min_gain is None:
             current_min_gain = 0.5
-            if obs_source_alt < 50:
+            if obs_source_alt.degrees < 50:
                 current_min_gain = 0.1
         else:
             current_min_gain = min_gain
