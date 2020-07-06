@@ -1,6 +1,5 @@
 *.xml
 *.pyc
-*.h5
 .idea
 build
 dist
