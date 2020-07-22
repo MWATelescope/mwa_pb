@@ -1,3 +1,4 @@
+import os
 from setuptools import setup
 from subprocess import check_output
 
@@ -16,6 +17,22 @@ def format_version(version, fmt='{tag}.{commitcount}'):
 def get_git_version():
     git_version = check_output('git describe --tags --long --dirty --always'.split()).decode('utf-8').strip()
     return format_version(version=git_version)
+
+# Download the mwa_full_embedded_element_pattern.h5 file if it doesn't exist
+datadir = os.path.join(os.path.dirname(__file__), 'mwa_pb', 'data')
+h5file = os.path.join(datadir, 'mwa_full_embedded_element_pattern.h5')
+print(h5file)
+if not os.path.exists(h5file):
+    # Importing download functions here to avoid unnessiary imports when the file is available
+    import urllib.request
+    print("The mwa_full_embedded_element_pattern.h5 file does not exist. Downloading it from http://ws.mwatelescope.org")
+    response = urllib.request.urlopen("http://ws.mwatelescope.org/static/mwa_full_embedded_element_pattern.h5", timeout = 5)
+    content = response.read()
+    f = open(h5file, 'wb' )
+    f.write( content )
+    f.close()
+    print("Download complete")
+
 
 setup(
     name='mwa_pb',

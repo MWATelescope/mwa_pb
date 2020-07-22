@@ -21,16 +21,6 @@ datadir = os.path.join(os.path.dirname(__file__), 'data')
 # 2016 beam model
 h5file = os.path.join(datadir, 'mwa_full_embedded_element_pattern.h5')
 h5fileversion = "UNDEFINED"
-if not os.path.exists(h5file):
-    # Importing download functions here to avoid unnessiary imports when the file is available
-    import urllib.request
-    logger.info("The mwa_full_embedded_element_pattern.h5 file does not exist. Downloading it from http://ws.mwatelescope.org")
-    response = urllib.request.urlopen("http://ws.mwatelescope.org/static/mwa_full_embedded_element_pattern.h5", timeout = 5)
-    content = response.read()
-    f = open(h5file, 'wb' )
-    f.write( content )
-    f.close()
-    logger.info("Download complete")
 
 __version__ = "1.2.0"
 
