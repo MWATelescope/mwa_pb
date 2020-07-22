@@ -7,13 +7,8 @@ It can either be the simple analytic model or the more advanced semi-analytic mo
 # import measured_beamformer,mwapb
 
 import os
-import logging
 
 from astropy.coordinates import EarthLocation
-
-# configure the logging
-logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
-logger = logging.getLogger(__name__)
 
 
 datadir = os.path.join(os.path.dirname(__file__), 'data')
