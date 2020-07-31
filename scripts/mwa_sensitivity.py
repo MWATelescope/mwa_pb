@@ -159,9 +159,13 @@ def calculate_sensitivity(freq, delays, gps, trcv_type, T_rcv, size, dirname, mo
     params = (freq_mhz, Tant_YY, beamsky_sum_YY, beam_sum_YY, pointing_az_deg, pointing_za_deg, beams['YY'], gain_YY,
               aeff_YY, sens_YY, sefd_YY, noise_YY)
     print(lstring % params)
+    
+    # WARNING : should be more complicated than this (TO-BE-UPDATED) :
+    noise_I = 0.5*math.sqrt( noise_XX*noise_XX + noise_YY*noise_YY )
 
     print("Noise expected on XX images = %.4f Jy" % noise_XX)
     print("Noise expected on YY images = %.4f Jy" % noise_YY)
+    print("Noise expected on Stokes I images = %.4f Jy (simple formula only !)" % noise_I)
 
     return (aeff_XX, T_sys_XX, sens_XX, sefd_XX, noise_XX, aeff_YY, T_sys_YY, sens_YY, sefd_YY, noise_YY)
 
