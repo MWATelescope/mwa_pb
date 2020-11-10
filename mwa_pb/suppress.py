@@ -24,8 +24,8 @@ from . import skyfield_utils as su
 
 # configure the logging
 logging.basicConfig()
-logger = logging.getLogger('pb.suppress')
-logger.setLevel(logging.INFO)
+LOGGER = logging.getLogger('pb.suppress')
+LOGGER.setLevel(logging.INFO)
 
 
 def get_best_gridpoints(gps_start,
@@ -38,6 +38,7 @@ def get_best_gridpoints(gps_start,
                         max_beam_distance_deg=360,
                         channel=145,
                         verb_level=1,
+                        logger=LOGGER,
                         duration=3600,
                         step=120,
                         min_elevation=30.00):
@@ -191,6 +192,7 @@ def get_best_gridpoints_suppress_sun(gps_start,
                                      max_beam_distance_deg=30,
                                      channel=145,
                                      verb_level=1,
+                                     logger=LOGGER,
                                      duration=3600,
                                      step=120,
                                      min_elevation=30.00):
@@ -206,6 +208,7 @@ def get_best_gridpoints_suppress_sun(gps_start,
                                max_beam_distance_deg=max_beam_distance_deg,
                                channel=channel,
                                verb_level=verb_level,
+                               logger=logger,
                                duration=duration,
                                step=step,
                                min_elevation=min_elevation)
