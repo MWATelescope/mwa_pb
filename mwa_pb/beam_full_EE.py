@@ -318,7 +318,10 @@ class Beam(object):
             Q2_accum = np.zeros(max_length, dtype=np.complex128)
 
             # Read in modes
-            Q_modes_all = self.AA.h5f['modes'].value.T
+            try:
+                Q_modes_all = np.array(self.AA.h5f['modes']).T
+            except:
+                Q_modes_all = self.AA.h5f['modes'].value.T
             Nmax = 0
             M_accum = None
             N_accum = None
@@ -329,7 +332,10 @@ class Beam(object):
 
                 # select spherical wave table
                 name = '%s%s_%s' % (pols[pol], ant_i + 1, self.AA.freq)
-                Q_all = self.AA.h5f[name].value.T
+                try:
+                    Q_all = np.array(self.AA.h5f[name]).T
+                except:
+                    Q_all = self.AA.h5f[name].value.T
 
                 # current length
                 my_len = np.max(Q_all.shape)
