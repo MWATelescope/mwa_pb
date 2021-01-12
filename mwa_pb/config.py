@@ -10,6 +10,7 @@ import os
 
 from astropy.coordinates import EarthLocation
 
+
 datadir = os.path.join(os.path.dirname(__file__), 'data')
 
 # 2016 beam model
