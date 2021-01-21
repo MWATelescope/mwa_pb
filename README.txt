@@ -22,5 +22,5 @@ github's maximum file size.
 
 After cloning this repository:
 $ cd mwa_pb/mwa_pb/data
-$ wget http://cerberus.mwa128t.org/mwa_full_embedded_element_pattern.h5
+$ wget http://ws.mwatelescope.org/static/mwa_full_embedded_element_pattern.h5
 $ python setup.py install
