@@ -5,10 +5,12 @@ $Date: 2011-10-31 11:30:40 -0500 (Mon, 31 Oct 2011) $:    Date of last commit
 
 """
 
+import os
+import sys
 import logging
 import math
 
-import numpy
+import numpy as np
 
 import astropy
 from astropy.time import Time
@@ -22,19 +24,24 @@ from . import mwa_tile
 logging.basicConfig(format='# %(levelname)s:%(name)s: %(message)s')
 logger = logging.getLogger(__name__)  # default logger level is WARNING
 
+try:
+    import mwa_hyperbeam
+except ImportError:
+    logger.warning('Could not import mwa_hyperbeam; using pure Python implementation')
+
 # Constants
 C = 2.998e8
 
 # dipole position within the tile
-DIPOLE_NORTH = config.DIPOLE_SEPARATION * numpy.array([1.5, 1.5, 1.5, 1.5,
-                                                       0.5, 0.5, 0.5, 0.5,
-                                                       -0.5, -0.5, -0.5, -0.5,
-                                                       -1.5, -1.5, -1.5, -1.5])
-DIPOLE_EAST = config.DIPOLE_SEPARATION * numpy.array([-1.5, -0.5, 0.5, 1.5,
-                                                      -1.5, -0.5, 0.5, 1.5,
-                                                      -1.5, -0.5, 0.5, 1.5,
-                                                      -1.5, -0.5, 0.5, 1.5])
-DIPOLE_Z = config.DIPOLE_SEPARATION * numpy.zeros(DIPOLE_NORTH.shape)
+DIPOLE_NORTH = config.DIPOLE_SEPARATION * np.array([1.5, 1.5, 1.5, 1.5,
+                                                    0.5, 0.5, 0.5, 0.5,
+                                                    -0.5, -0.5, -0.5, -0.5,
+                                                    -1.5, -1.5, -1.5, -1.5])
+DIPOLE_EAST = config.DIPOLE_SEPARATION * np.array([-1.5, -0.5, 0.5, 1.5,
+                                                   -1.5, -0.5, 0.5, 1.5,
+                                                   -1.5, -0.5, 0.5, 1.5,
+                                                   -1.5, -0.5, 0.5, 1.5])
+DIPOLE_Z = config.DIPOLE_SEPARATION * np.zeros(DIPOLE_NORTH.shape)
 
 
 #########
@@ -62,15 +69,15 @@ def MWA_Tile_full_EE(za, az, freq,
     """
     # Convert za and az into 2D numpy arrays, because the Advanced and FullEE models require that format.
     if type(za) is list:
-        za = numpy.array(za)
+        za = np.array(za)
     if type(az) is list:
-        az = numpy.array(az)
+        az = np.array(az)
 
     if (isinstance(za, float)) and (isinstance(az, float)):  # Convert float to 2D array
-        za = numpy.array([[za]])
-        az = numpy.array([[az]])
+        za = np.array([[za]])
+        az = np.array([[az]])
         dtype = 'float'
-    elif (isinstance(za, numpy.ndarray)) and (isinstance(az, numpy.ndarray)):
+    elif (isinstance(za, np.ndarray)) and (isinstance(az, np.ndarray)):
         if (len(za.shape) == 1) and (len(az.shape) == 1):  # 1D array, convert to 2D array
             za = za[None, :]
             az = az[None, :]
@@ -86,25 +93,61 @@ def MWA_Tile_full_EE(za, az, freq,
         logger.error('ERROR - az/za data types must be the same, and either floats or 1 or 2 dimensional arrays')
         return None
 
-    tile = beam_full_EE.get_AA_Cached(target_freq_Hz=freq)
-    mybeam = beam_full_EE.Beam(tile, delays, amps=numpy.ones([2, 16]))  # calling with amplitudes=1 every time - otherwise they get overwritten !!!
-    if interp:
-        j = mybeam.get_interp_response(az, za, pixels_per_deg)
+    # If we're not interpolating, and we could import hyperbeam, then use it to
+    # calculate the Jones matrices.
+    if not interp and "mwa_hyperbeam" in sys.modules:
+        # Make "hyperbeam" a global variable to the Rust object. If it doesn't
+        # exist, we need to create one.
+        if "hyperbeam" not in globals():
+            global hyperbeam
+            try:
+                # If this fails, it's either because MWA_BEAM_FILE isn't
+                # defined, or there's something wrong with the file that
+                # variable points to.
+                hyperbeam = mwa_hyperbeam.FEEBeam()
+            except mwa_hyperbeam.HyperbeamError:
+                # Use the HDF5 file that's hopefully installed in mwa_pb.
+                datadir = os.path.join(os.path.dirname(__file__), 'data')
+                h5file = os.path.join(datadir,
+                                      'mwa_full_embedded_element_pattern.h5')
+                hyperbeam = mwa_hyperbeam.FEEBeam(h5file)
+
+        # Rather than repeat the command to hyperbeam a bunch of times for
+        # slightly different arguments, make a partially-applied function
+        # (lambda).
+        f = lambda d: hyperbeam.calc_jones_array(az[0, :], za[0, :],
+                                                 freq_hz=freq, amps=[1]*16,
+                                                 delays=d,
+                                                 norm_to_zenith=zenithnorm)
+        if delays.shape[0] == 2:
+            # Assume that both rows of the delays array are the same.
+            j_flat = f(delays[0])
+        else:
+            j_flat = f(delays)
+        # Make j in the format that the rest of mwa_pb expects.
+        j = j_flat.reshape((1, -1, 2, 2))
+
+    # Calculate the Jones matrices using the existing Python code.
     else:
-        j = mybeam.get_response(az, za)
-    if zenithnorm:
-        j = tile.apply_zenith_norm_Jones(j)  # Normalise
+        tile = beam_full_EE.get_AA_Cached(target_freq_Hz=freq)
+        mybeam = beam_full_EE.Beam(tile, delays, amps=np.ones([2, 16]))  # calling with amplitudes=1 every time - otherwise they get overwritten !!!
+        if interp:
+            j = mybeam.get_interp_response(az, za, pixels_per_deg)
+        else:
+            j = mybeam.get_response(az, za)
+        if zenithnorm:
+            j = tile.apply_zenith_norm_Jones(j)  # Normalise
 
-    # TO DO: do frequency interpolation here (with 2nd adjacent beam)
+        # TO DO: do frequency interpolation here (with 2nd adjacent beam)
 
-    # Use swapaxis to place jones matrices in last 2 dimensions
-    # insead of first 2 dims.
-    if len(j.shape) == 4:
-        j = numpy.swapaxes(numpy.swapaxes(j, 0, 2), 1, 3)
-    elif len(j.shape) == 3:  # 1-D
-        j = numpy.swapaxes(numpy.swapaxes(j, 1, 2), 0, 1)
-    else:  # single value
-        pass
+        # Use swapaxis to place jones matrices in last 2 dimensions
+        # insead of first 2 dims.
+        if len(j.shape) == 4:
+            j = np.swapaxes(np.swapaxes(j, 0, 2), 1, 3)
+        elif len(j.shape) == 3:  # 1-D
+            j = np.swapaxes(np.swapaxes(j, 1, 2), 0, 1)
+        else:  # single value
+            pass
 
     if jones:
         if dtype == 'float':
@@ -117,7 +160,7 @@ def MWA_Tile_full_EE(za, az, freq,
     # Use mwa_tile makeUnpolInstrumentalResponse because we have swapped axes
     vis = mwa_tile.makeUnpolInstrumentalResponse(j, j)
     if not power:
-        xx, yy = (numpy.sqrt(vis[:, :, 0, 0].real), numpy.sqrt(vis[:, :, 1, 1].real))
+        xx, yy = (np.sqrt(vis[:, :, 0, 0].real), np.sqrt(vis[:, :, 1, 1].real))
     else:
         xx, yy = (vis[:, :, 0, 0].real, vis[:, :, 1, 1].real)
 
@@ -143,19 +186,19 @@ def MWA_Tile_advanced(za, az, freq=100.0e6, delays=None, zenithnorm=None, power=
 
     """
     if isinstance(delays, list):
-        delays = numpy.array(delays)
+        delays = np.array(delays)
 
     # Convert za and az into 2D numpy arrays, because the Advanced and FullEE models require that format.
     if type(za) is list:
-        za = numpy.array(za)
+        za = np.array(za)
     if type(az) is list:
-        az = numpy.array(az)
+        az = np.array(az)
 
     if (isinstance(za, float)) and (isinstance(az, float)):  # Convert float to 2D array
-        za = numpy.array([[za]])
-        az = numpy.array([[az]])
+        za = np.array([[za]])
+        az = np.array([[az]])
         dtype = 'float'
-    elif (isinstance(za, numpy.ndarray)) and (isinstance(az, numpy.ndarray)):
+    elif (isinstance(za, np.ndarray)) and (isinstance(az, np.ndarray)):
         if (len(za.shape) == 1) and (len(az.shape) == 1):  # 1D array, convert to 2D array
             za = za[None, :]
             az = az[None, :]
@@ -176,7 +219,7 @@ def MWA_Tile_advanced(za, az, freq=100.0e6, delays=None, zenithnorm=None, power=
 
     if delays.shape == (16,):
         try:
-            delays = numpy.repeat(numpy.reshape(delays, (1, 16)), 2, axis=0)
+            delays = np.repeat(np.reshape(delays, (1, 16)), 2, axis=0)
         except Exception:
             logger.error('Unable to convert delays (shape=%s) to (2,16)' % (delays.shape))
             return None
@@ -195,7 +238,7 @@ def MWA_Tile_advanced(za, az, freq=100.0e6, delays=None, zenithnorm=None, power=
 
     vis = mwa_tile.makeUnpolInstrumentalResponse(j, j)
     if not power:
-        xx, yy = (numpy.sqrt(vis[:, :, 0, 0].real), numpy.sqrt(vis[:, :, 1, 1].real))
+        xx, yy = (np.sqrt(vis[:, :, 0, 0].real), np.sqrt(vis[:, :, 1, 1].real))
     else:
         xx, yy = (vis[:, :, 0, 0].real, vis[:, :, 1, 1].real)
 
@@ -244,23 +287,23 @@ def MWA_Tile_analytic(za, az,
         delays = 0
 
     if (isinstance(delays, float) or isinstance(delays, int)):
-        delays = delays * numpy.ones((16))
-    if (isinstance(delays, numpy.ndarray) and len(delays) == 1):
-        delays = delays[0] * numpy.ones((16))
+        delays = delays * np.ones((16))
+    if (isinstance(delays, np.ndarray) and len(delays) == 1):
+        delays = delays[0] * np.ones((16))
     if isinstance(delays, list):
-        delays = numpy.array(delays)
+        delays = np.array(delays)
 
     assert delays.shape == (2, 16) or delays.shape == (16,), "Delays %s have unexpected shape %s" % (delays, delays.shape)
     if len(delays.shape) > 1:
         delays = delays[0]
 
     if amps is None:
-        amps = numpy.ones((16))
+        amps = np.ones((16))
 
     # direction cosines (relative to zenith) for direction az,za
-    projection_east = numpy.sin(theta) * numpy.sin(phi)
-    projection_north = numpy.sin(theta) * numpy.cos(phi)
-    # projection_z = numpy.cos(theta)
+    projection_east = np.sin(theta) * np.sin(phi)
+    projection_north = np.sin(theta) * np.cos(phi)
+    # projection_z = np.cos(theta)
 
     if dip_sep == config.DIPOLE_SEPARATION:
         dipole_north = DIPOLE_NORTH
@@ -268,38 +311,38 @@ def MWA_Tile_analytic(za, az,
         # dipole_z = DIPOLE_Z
     else:
         # compute dipole position within the tile using a custom dipole separation value
-        dipole_north = dip_sep * numpy.array([1.5, 1.5, 1.5, 1.5,
-                                              0.5, 0.5, 0.5, 0.5,
-                                              -0.5, -0.5, -0.5, -0.5,
-                                              -1.5, -1.5, -1.5, -1.5])
-        dipole_east = dip_sep * numpy.array([-1.5, -0.5, 0.5, 1.5,
-                                             -1.5, -0.5, 0.5, 1.5,
-                                             -1.5, -0.5, 0.5, 1.5,
-                                             -1.5, -0.5, 0.5, 1.5])
-        # dipole_z = dip_sep * numpy.zeros(dipole_north.shape)
+        dipole_north = dip_sep * np.array([1.5, 1.5, 1.5, 1.5,
+                                           0.5, 0.5, 0.5, 0.5,
+                                           -0.5, -0.5, -0.5, -0.5,
+                                           -1.5, -1.5, -1.5, -1.5])
+        dipole_east = dip_sep * np.array([-1.5, -0.5, 0.5, 1.5,
+                                          -1.5, -0.5, 0.5, 1.5,
+                                          -1.5, -0.5, 0.5, 1.5,
+                                          -1.5, -0.5, 0.5, 1.5])
+        # dipole_z = dip_sep * np.zeros(dipole_north.shape)
 
     # loop over dipoles
     array_factor = 0.0
     for k in range(16):
         # relative dipole phase for a source at (theta,phi)
-        phase = amps[k] * numpy.exp((1j) * 2 * math.pi / lam * (dipole_east[k] * projection_east
-                                                                + dipole_north[k] * projection_north
-                                                                # + dipole_z[k] * projection_z
-                                                                - delays[k] * C * delay_int))
+        phase = amps[k] * np.exp((1j) * 2 * math.pi / lam * (dipole_east[k] * projection_east
+                                                             + dipole_north[k] * projection_north
+                                                             # + dipole_z[k] * projection_z
+                                                             - delays[k] * C * delay_int))
         array_factor += phase / 16.0
 
-    ground_plane = 2 * numpy.sin(2 * math.pi * dipheight / lam * numpy.cos(theta))
+    ground_plane = 2 * np.sin(2 * math.pi * dipheight / lam * np.cos(theta))
     # make sure we filter out the bottom hemisphere
     ground_plane *= (theta <= math.pi / 2)
     # normalize to zenith
     if (zenithnorm):
-        # print "Normalisation factor (analytic) = %.4f" % (2*numpy.sin(2*math.pi*dipheight/lam))
-        ground_plane /= 2 * numpy.sin(2 * math.pi * dipheight / lam)
+        # print "Normalisation factor (analytic) = %.4f" % (2*np.sin(2*math.pi*dipheight/lam))
+        ground_plane /= 2 * np.sin(2 * math.pi * dipheight / lam)
 
     # response of the 2 tile polarizations
     # gains due to forshortening
-    dipole_ns = numpy.sqrt(1 - projection_north * projection_north)
-    dipole_ew = numpy.sqrt(1 - projection_east * projection_east)
+    dipole_ns = np.sqrt(1 - projection_north * projection_north)
+    dipole_ew = np.sqrt(1 - projection_east * projection_east)
 
     # voltage responses of the polarizations from an unpolarized source
     # this is effectively the YY voltage gain
@@ -309,8 +352,8 @@ def MWA_Tile_analytic(za, az,
 
     if jones:
         # Calculate Jones matrices
-        dipole_jones = numpy.array([[numpy.cos(theta) * numpy.sin(phi), 1 * numpy.cos(phi)],
-                                    [numpy.cos(theta) * numpy.cos(phi), -numpy.sin(phi)]])
+        dipole_jones = np.array([[np.cos(theta) * np.sin(phi), 1 * np.cos(phi)],
+                                 [np.cos(theta) * np.cos(phi), -np.sin(phi)]])
         j = dipole_jones * ground_plane * array_factor
         # print "dipole_jones = %s" % (dipole_jones)
         # print "ground_plane = %s , array_factor = %s" % (ground_plane,array_factor)
@@ -318,15 +361,15 @@ def MWA_Tile_analytic(za, az,
         # Use swapaxis to place jones matrices in last 2 dimensions
         # insead of first 2 dims.
         if len(j.shape) == 4:
-            j = numpy.swapaxes(numpy.swapaxes(j, 0, 2), 1, 3)
+            j = np.swapaxes(np.swapaxes(j, 0, 2), 1, 3)
         elif len(j.shape) == 3:  # 1-D
-            j = numpy.swapaxes(numpy.swapaxes(j, 1, 2), 0, 1)
+            j = np.swapaxes(np.swapaxes(j, 1, 2), 0, 1)
         else:  # single value
             pass
         return j
 
     if power:
-        return numpy.real(numpy.conj(gain_ew) * gain_ew), numpy.real(numpy.conj(gain_ns) * gain_ns)
+        return np.real(np.conj(gain_ew) * gain_ew), np.real(np.conj(gain_ns) * gain_ns)
     return gain_ew, gain_ns
 
 
@@ -341,8 +384,8 @@ def analytic_full_EE_correction(za, az, freq, delays):
     correction_matrix - [[gx, 0], [0, gy]], where we expect the cross-terms to be 0"""
 
     # Analytic Jones matrix
-    za = numpy.array(za)
-    az = numpy.array(az)
+    za = np.array(za)
+    az = np.array(az)
 
     j_ana = MWA_Tile_analytic(za, az, freq, delays, jones=True, zenithnorm=False)
 
@@ -358,9 +401,9 @@ def analytic_full_EE_correction(za, az, freq, delays):
     if len(za.shape) == 0:
         j_full_EE = j_full_EE[:, :, 0]  # Drop last axis
 
-        correction_matrix = numpy.dot(numpy.dot(numpy.linalg.inv(j_ana),
-                                                numpy.dot(j_full_EE, j_full_EE.conj().T)),
-                                      numpy.linalg.inv(j_ana.conj().T))
+        correction_matrix = np.dot(np.dot(np.linalg.inv(j_ana),
+                                          np.dot(j_full_EE, j_full_EE.conj().T)),
+                                   np.linalg.inv(j_ana.conj().T))
     else:
         e = 'ZA, Az arrays are not currently supported in analytic_full_EE_correction'
         # logger.error(e)
@@ -401,7 +444,7 @@ def get_beam_response(obsid,
         return None
 
     duration = observation['starttime'] - observation['stoptime']
-    starttimes = numpy.arange(0, duration, dt)
+    starttimes = np.arange(0, duration, dt)
     stoptimes = starttimes + dt
     stoptimes[stoptimes > duration] = duration
     Ntimes = len(starttimes)
@@ -410,22 +453,22 @@ def get_beam_response(obsid,
 
     channels = observation['rfstreams']['0']['frequencies']
     if not centeronly:
-        PowersX = numpy.zeros((len(sources),
-                               Ntimes,
-                               len(channels)))
-        PowersY = numpy.zeros((len(sources),
-                               Ntimes,
-                               len(channels)))
+        PowersX = np.zeros((len(sources),
+                            Ntimes,
+                            len(channels)))
+        PowersY = np.zeros((len(sources),
+                            Ntimes,
+                            len(channels)))
         # in Hz
-        frequencies = numpy.array(channels) * 1.28e6
+        frequencies = np.array(channels) * 1.28e6
     else:
-        PowersX = numpy.zeros((len(sources),
-                               Ntimes, 1))
-        PowersY = numpy.zeros((len(sources),
-                               Ntimes, 1))
-        frequencies = numpy.array([channels[12]]) * 1.28e6  # center channel
-    RAs = numpy.array([x[0] for x in sources])
-    Decs = numpy.array([x[1] for x in sources])
+        PowersX = np.zeros((len(sources),
+                            Ntimes, 1))
+        PowersY = np.zeros((len(sources),
+                            Ntimes, 1))
+        frequencies = np.array([channels[12]]) * 1.28e6  # center channel
+    RAs = np.array([x[0] for x in sources])
+    Decs = np.array([x[1] for x in sources])
     if len(RAs) == 0:
         logger.error('Must supply >=1 source positions\n')
         return None
@@ -445,8 +488,8 @@ def get_beam_response(obsid,
         Azs, Alts = obs_source_prec.az.deg, obs_source_prec.alt.deg
 
         # go from altitude to zenith angle
-        theta = numpy.radians(90 - Alts)
-        phi = numpy.radians(Azs)
+        theta = np.radians(90 - Alts)
+        phi = np.radians(Azs)
 
         for ifreq in range(len(frequencies)):
             rX, rY = MWA_Tile_analytic(theta, phi,
