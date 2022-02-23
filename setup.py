@@ -2,21 +2,6 @@ import os
 from setuptools import setup
 from subprocess import check_output
 
-#The following two functions were taken from the repo: https://github.com/pyfidelity/setuptools-git-version/blob/master/setuptools_git_version.py
-def format_version(version, fmt='{tag}.{commitcount}'):
-    parts = version.split('-')
-    if len(parts) == 1:
-        return parts[0]
-    assert len(parts) in (3, 4)
-    dirty = len(parts) == 4
-    tag, count, sha = parts[:3]
-    if count == '0' and not dirty:
-        return tag
-    return fmt.format(tag=tag, commitcount=count)
-
-def get_git_version():
-    git_version = check_output('git describe --tags --long --dirty --always'.split()).decode('utf-8').strip()
-    return format_version(version=git_version)
 
 # Download the mwa_full_embedded_element_pattern.h5 file if it doesn't exist
 datadir = os.path.join(os.path.dirname(__file__), 'mwa_pb', 'data')
@@ -36,7 +21,7 @@ if not os.path.exists(h5file):
 
 setup(
     name='mwa_pb',
-    version=get_git_version(),
+    version='1.4',
     packages=['mwa_pb'],
     package_data={'mwa_pb':['data/*.fits', 'data/*.txt', 'data/*.h5', 'data/*.fab', 'data/*.dat']},
     url='https://github.com/MWATelescope/mwa_pb',
