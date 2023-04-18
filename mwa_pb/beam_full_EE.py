@@ -136,7 +136,7 @@ class ApertureArray(object):
         proj of ph onto N-S is max when ph_EtN=0 (ph_NtE=90)"""
 
         mybeam = Beam(self, delays=np.zeros([2, 16]), amps=np.ones([2, 16]))
-        self.norm_fac = np.zeros((2, 2), dtype=np.complex128)
+        self.norm_fac = np.zeros((2, 2), dtype=complex)
 
         # fill in Jones matrix
         # 2017-05-31 : MS changed normalisation at zenith to ABS so that normalisation does not change signs of the Jones matrix
@@ -314,8 +314,8 @@ class Beam(object):
 
             # accumulating spherical harmonics coefficients for the array
             # initialize
-            Q1_accum = np.zeros(max_length, dtype=np.complex128)
-            Q2_accum = np.zeros(max_length, dtype=np.complex128)
+            Q1_accum = np.zeros(max_length, dtype=complex)
+            Q2_accum = np.zeros(max_length, dtype=complex)
 
             # Read in modes
             try:
@@ -327,8 +327,8 @@ class Beam(object):
             N_accum = None
             for ant_i in range(n_ant):
                 # re-initialise Q1 and Q2 for every antenna
-                Q1 = np.zeros(max_length, dtype=np.complex128)
-                Q2 = np.zeros(max_length, dtype=np.complex128)
+                Q1 = np.zeros(max_length, dtype=complex)
+                Q2 = np.zeros(max_length, dtype=complex)
 
                 # select spherical wave table
                 name = '%s%s_%s' % (pols[pol], ant_i + 1, self.AA.freq)
@@ -461,7 +461,7 @@ class Beam(object):
 
         logger.debug('Calculating a gridded beam and interpolating onto coordinates of shape %s...' % (phi_arr.shape,))
         # Interpolate from gridded beam
-        Jones = np.zeros((2, 2) + np.shape(phi_arr), dtype=np.complex128)
+        Jones = np.zeros((2, 2) + np.shape(phi_arr), dtype=complex)
 
         logger.debug('Calculating gridded beam (Az=0-360, ZA=0-90) at angular resolution %s pixels per degree... %s' %
                      (pixels_per_deg, datetime.datetime.now().time()))
@@ -514,14 +514,14 @@ class Beam(object):
                 e = 'For gridded beam, theta (shape %s) and phi (shape %s) must be 1-D arrays'
                 logger.error(e % (np.shape(theta_arr), np.shape(phi_arr)))
                 raise ValueError(e % (np.shape(theta_arr), np.shape(phi_arr)))
-            Jones = np.zeros((2, 2, len(phi_arr), len(theta_arr)), dtype=np.complex128)
+            Jones = np.zeros((2, 2, len(phi_arr), len(theta_arr)), dtype=complex)
         else:
             # Create Jones matrix of shape: 2 x 2 x shape(phi_arr)
             if phi_arr.shape != theta_arr.shape:
                 e = 'Theta (shape %s) and phi (shape %s) must be the same shape'
                 logger.error(e % (np.shape(theta_arr), np.shape(phi_arr)))
                 raise ValueError(e % (np.shape(theta_arr), np.shape(phi_arr)))
-            Jones = np.zeros((2, 2) + np.shape(phi_arr), dtype=np.complex128)
+            Jones = np.zeros((2, 2) + np.shape(phi_arr), dtype=complex)
 
         counter = 10000  # Counter for messages
 
@@ -588,8 +588,8 @@ class Beam(object):
             # really fine grids (dimension reduces from [nmax^2+2*nmax] to [2*nmax+1] )
             # tests showed that the overhead for summing and re-calculating phi
             # is smaller than doing the dot product without reductions (especially for fine grids)
-            emn_P_sum = np.zeros((len(theta_unique), 2 * nmax + 1), dtype=np.complex128)
-            emn_T_sum = np.zeros((len(theta_unique), 2 * nmax + 1), dtype=np.complex128)
+            emn_P_sum = np.zeros((len(theta_unique), 2 * nmax + 1), dtype=complex)
+            emn_T_sum = np.zeros((len(theta_unique), 2 * nmax + 1), dtype=complex)
             for m in range(-nmax, nmax + 1):
                 emn_P_sum[:, m + nmax] = np.sum(emn_P[:, M == m], axis=1)
                 emn_T_sum[:, m + nmax] = np.sum(emn_T[:, M == m], axis=1)
@@ -673,7 +673,7 @@ def P1sin_array(nmax, theta):
         Pm1 = np.vstack([P[1::, :], np.zeros((1, np.size(theta)))])  # I should just be able to use orders=np.arange(1,n+1), then append zero?
         # Pm1=Pm1.reshape(len(Pm1),1)   # FIXME: can probably make this and others 1-D
         # P_{n}^{|m|}(u)/sin_th
-        # Pm_sin=np.zeros((n+1,1),dtype=np.complex128) #initialize
+        # Pm_sin=np.zeros((n+1,1),dtype=complex) #initialize
         # parameters
         Pm_sin = P / sin_theta
         # accumulate Psin and P1 for the m values
