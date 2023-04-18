@@ -1,3 +1,10 @@
+*********************************************************************************
+*** NOTE: mwa_pb is officially unsupported and we will not be maintaining it. ***
+*********************************************************************************
+For the vast majority of cases, users to should migrate to using hyperdrive for
+any and all primary beam modelling requirements.
+
+
 
 MWA Telescope Primary Beam code
 
