@@ -357,7 +357,9 @@ def plot_MWAconstellations(outfile=None,
         cmap = CMI
     else:
         cmap = CM
-    bmap.imshow(numpy.ma.log10(tform_skymap[:, ::-1]), cmap=cmap, vmin=math.log10(LOW), vmax=math.log10(HIGH))
+    bmap.imshow(numpy.ma.log10(tform_skymap[:, ::-1]), cmap=cmap, vmin=math.log10(LOW), vmax=math.log10(HIGH), ax=ax1)
+    # For some weird reason, after the basemap version bump from 1.2.1 to 1.3.8, this line needs to be called twice to work at all
+    bmap.imshow(numpy.ma.log10(tform_skymap[:, ::-1]), cmap=cmap, vmin=math.log10(LOW), vmax=math.log10(HIGH), ax=ax1)
 
     delays = []
     if showbeam:

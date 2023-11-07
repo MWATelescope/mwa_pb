@@ -138,7 +138,7 @@ class LNAImpedance(object):
                               15.243 - 81.042j, 15.146 - 80.671j, 15.05 - 80.296j, 14.973 - 79.911j,
                               14.955 - 79.614j, 14.876 - 79.266j, 14.839 - 78.892j, 14.723 - 78.569j,
                               14.683 - 78.282j, 14.643 - 78.058j, 14.614 - 77.894j, 14.594 - 77.713j],
-                             dtype=numpy.complex)
+                             dtype=complex)
 
     def getZ(self, freq):
         """Return the interpolated LNA impedance (Ohms) for the freq (Hz)
@@ -173,7 +173,7 @@ class TileImpedanceMatrix(object):
             self.freqs[i] = hdus[i].header['FREQ']
         #        freqs_MHz=[88,119,155,186,216]
         #        self.freqs = numpy.array(freqs_MHz,dtype=numpy.float32)*1e6
-        #        self.Zmatrix = numpy.empty(self.freqs.shape + (32,32),dtype=numpy.complex)
+        #        self.Zmatrix = numpy.empty(self.freqs.shape + (32,32),dtype=complex)
         #        freqind=0
         #        for f in freqs_MHz:
         #            realfile = filesdir+"ZReal"+str(f)+"MHz.txt"
