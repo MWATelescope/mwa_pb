@@ -63,7 +63,7 @@ class Dipole(object):
         self.height = height
         self.length = length
         if gain is None:
-            self.gain = numpy.eye(2, dtype=numpy.complex64)
+            self.gain = numpy.eye(2, dtype=complex)
         else:
             self.gain = gain
         self.interp_freq = 0.0
@@ -94,7 +94,7 @@ class Dipole(object):
         # p = numpy.where
         nza = len(self.lookup_za)
         nph = len(self.lookup_ph)
-        self.lookup = numpy.empty((nfreqs, nza, nph, 2, 2), dtype=numpy.complex64)
+        self.lookup = numpy.empty((nfreqs, nza, nph, 2, 2), dtype=complex)
         freqs = []
         for i in range(nfreqs):
             hdu = hdulist[i]
@@ -195,7 +195,7 @@ class Dipole(object):
         j11 = self.i11_real.ev(za_deg.flatten(), ph_deg.flatten()) + 1.0j * self.i11_imag.ev(za_deg.flatten(),
                                                                                              ph_deg.flatten())
 
-        result = numpy.empty((za.shape + (2, 2)), dtype=numpy.complex64)
+        result = numpy.empty((za.shape + (2, 2)), dtype=complex)
         result[..., 0, 0] = j00.reshape(za.shape) / self.j00norm
         result[..., 0, 1] = -j01.reshape(za.shape) / self.j01norm  # sign flip between az and phi
         result[..., 1, 0] = j10.reshape(za.shape) / self.j10norm
@@ -218,7 +218,7 @@ class Dipole(object):
         assert az.shape == za.shape, "Input za and az arrays must have same dimension"
 
         # output array has 2x2 Jones matrix for every az/za point in input
-        result = numpy.empty((za.shape + (2, 2)), dtype=numpy.complex64)
+        result = numpy.empty((za.shape + (2, 2)), dtype=complex)
         # apply the groundscreen factor, which is independent of az
         # znorm = 1.0
         gs = self.groundScreen(za, freq)
@@ -314,8 +314,8 @@ class ApertureArray(object):
         sz = numpy.sin(za)
         kx = (2.0 * numpy.pi / lam) * numpy.sin(az) * sz
         ky = (2.0 * numpy.pi / lam) * numpy.cos(az) * sz
-        ax = numpy.zeros_like(az, dtype=numpy.complex64)
-        ay = numpy.zeros_like(az, dtype=numpy.complex64)
+        ax = numpy.zeros_like(az, dtype=complex)
+        ay = numpy.zeros_like(az, dtype=complex)
         for i in range(len(self.xpos)):
             ph = kx * self.xpos[i] + ky * self.ypos[i]
             ax += port_current[1, i] * (numpy.cos(ph) + 1.0j * numpy.sin(ph))  # X dipoles
