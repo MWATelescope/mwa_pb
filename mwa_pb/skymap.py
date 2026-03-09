@@ -417,6 +417,36 @@ def plot_MWAconstellations(outfile=None,
 
     X0, Y0 = bmap(LST_hours.hour * 15 - 360, su.MWA_TOPO.latitude.degrees)
 
+    # Plot the phase center and any voltage beams
+    newx, newy = bmap(ra, dec)
+    good = (newx > bmap.xmin) & (newx < bmap.xmax) & (newy > bmap.ymin) & (newy < bmap.ymax)
+    if good:
+        bmap.scatter(bmap.xmax - newx, newy,
+                     50.0 * plotscale,
+                     'white',
+                     edgecolor='none',
+                     alpha=0.7)
+
+    if 'voltage_beams' in obsinfo:
+        for number, beam in obsinfo['voltage_beams'].items():
+            ra = numpy.array([beam['ra']])
+            dec = numpy.array([beam['dec']])
+            name = beam['target_name']
+            newx, newy = bmap(ra, dec)
+            good = (newx > bmap.xmin) & (newx < bmap.xmax) & (newy > bmap.ymin) & (newy < bmap.ymax)
+            if good:
+                bmap.scatter(bmap.xmax - newx, newy,
+                             20.0 * plotscale,
+                             'white',
+                             edgecolor='none',
+                             alpha=0.7)
+                ax1.text(bmap.xmax - newx + 2e5, newy,
+                         '%d:%s' % (number, name),
+                         horizontalalignment='left',
+                         fontsize=12 * plotscale,
+                         color='white',
+                         verticalalignment='center')
+
     if constellations:
         # plot the constellations
         ConstellationStars = []
@@ -620,3 +650,21 @@ def plot_MWAconstellations(outfile=None,
         plt.close(fig)
         del ax1
         del fig
+
+
+"""
+import mwaconfig
+from obssched import mwa_db
+db=mwa_db.getdb()
+from obssched import tilestatus as ts
+from mwa_pb import skymap
+SKYDATA = skymap.SkyData()
+# obsid = 1456747216
+# obsid = 1454999592
+obsid = 1456774216
+obs = ts.getObservationInfo(db, obsid=obsid)
+im = skymap.plot_MWAconstellations(outfile=None, obsinfo=obs, constellations=False, observing=True, showbeam=True, skydata=SKYDATA, background='black', channel=121)
+f = open('/tmp/%d.png' % obsid, 'wb')
+f.write(im)
+f.close()
+"""
