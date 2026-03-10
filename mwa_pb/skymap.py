@@ -427,6 +427,12 @@ def plot_MWAconstellations(outfile=None,
                      'white',
                      edgecolor='none',
                      alpha=0.7)
+        ax1.text(bmap.xmax - newx - 2e5, newy,
+                 'PC',
+                 horizontalalignment='right',
+                 fontsize=12 * plotscale,
+                 color='white',
+                 verticalalignment='center')
 
     if 'voltage_beams' in obsinfo:
         for number, beam in obsinfo['voltage_beams'].items():
