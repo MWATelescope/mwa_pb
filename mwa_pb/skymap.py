@@ -424,14 +424,15 @@ def plot_MWAconstellations(outfile=None,
     if good:
         bmap.scatter(bmap.xmax - newx, newy,
                      50.0 * plotscale,
-                     'white',
+                     'turquoise',
                      edgecolor='none',
-                     alpha=0.7)
+                     alpha=0.5)
         ax1.text(bmap.xmax - newx - 2e5, newy,
                  'PC',
                  horizontalalignment='right',
                  fontsize=12 * plotscale,
-                 color='white',
+                 color='turquoise',
+                 alpha=0.5,
                  verticalalignment='center')
 
     if 'voltage_beams' in obsinfo:
