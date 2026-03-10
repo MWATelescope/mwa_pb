@@ -314,8 +314,9 @@ def plot_MWAconstellations(outfile=None,
         elif '0' in obsinfo['rfstreams']:
             channel = obsinfo['rfstreams']['0']['frequencies'][12]
 
-    s_obstime = su.time2tai(obsinfo['starttime'])
-    a_obstime = Time(obsinfo['starttime'], format='gps', scale='utc')
+    s_obstime = su.time2tai((obsinfo['starttime'] + obsinfo['stoptime']) / 2)  # observation midpoint time
+    s_starttime = su.time2tai(obsinfo['starttime'])
+    a_obstime = Time((obsinfo['starttime'] + obsinfo['stoptime']) / 2, format='gps', scale='utc')
 
     if viewgps is None:
         s_viewtime = s_obstime
@@ -377,7 +378,7 @@ def plot_MWAconstellations(outfile=None,
                 beamcolor = ((0.5, 0.5, 0.5), (0.75, 0.75, 0.75), (1.0, 1.0, 1.0))
 
         # If the observation is in the future, calculate what delays will be used, instead of using the recorded actual delays
-        if su.tai2gps(s_obstime) > su.tai2gps(su.time2tai()) + 10:
+        if su.tai2gps(s_starttime) > su.tai2gps(su.time2tai()) + 10:
             if 0 in obsinfo['rfstreams']:
                 delays = calc_delays(az=obsinfo['rfstreams'][0]['azimuth'], el=obsinfo['rfstreams'][0]['elevation'])
             elif '0' in obsinfo['rfstreams']:
