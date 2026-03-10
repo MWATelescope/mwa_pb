@@ -451,7 +451,7 @@ def plot_MWAconstellations(outfile=None,
                 ax1.text(bmap.xmax - newx + 2e5, newy,
                          '%d:%s' % (number, name),
                          horizontalalignment='left',
-                         fontsize=12 * plotscale,
+                         fontsize=8 * plotscale,
                          color='white',
                          verticalalignment='center')
 
