@@ -164,7 +164,7 @@ class TileImpedanceMatrix(object):
         except IOError:
             raise Exception('Cannot load impedance file %s' % filename)
         nfreqs = len(hdus)
-        self.Zmatrix = numpy.empty((nfreqs,) + (32, 32), dtype=numpy.complex64)
+        self.Zmatrix = numpy.empty((nfreqs,) + (32, 32), dtype=complex)
         self.freqs = numpy.zeros(nfreqs)
         for i in range(nfreqs):
             mag = hdus[i].data[0, ...]
